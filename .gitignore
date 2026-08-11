@@ -1,0 +1,27 @@
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+
+# Runtime data
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+server/storage/
+!server/storage/.gitkeep
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+coverage/
+
+# TypeScript incremental build info
+*.tsbuildinfo
