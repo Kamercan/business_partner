@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ApiError } from '../../api/client';
+import { ApiError, api } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
 import { Loading } from '../../components/ui';
 import { YanmarLogo } from '../public/PublicShell';
@@ -18,6 +18,15 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
+
+  // Örnek hesaplar yalnızca demo modunda gösterilir; gerçek kurulumda gizlenir.
+  useEffect(() => {
+    api
+      .get<{ demoMode?: boolean }>('/meta')
+      .then((m) => setDemoMode(!!m.demoMode))
+      .catch(() => setDemoMode(false));
+  }, []);
 
   if (loading) return <Loading />;
   if (user) return <Navigate to="/yonetim" replace />;
@@ -83,24 +92,26 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="demo-accounts">
-            <strong>Demo hesapları</strong>
-            <br />
-            {DEMO.map((d) => (
-              <div key={d.email}>
-                {d.role}:{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail(d.email);
-                    setPassword(d.password);
-                  }}
-                >
-                  {d.email}
-                </button>
-              </div>
-            ))}
-          </div>
+          {demoMode && (
+            <div className="demo-accounts">
+              <strong>Demo hesapları</strong> — tıklayınca alanlar dolar
+              <br />
+              {DEMO.map((d) => (
+                <div key={d.email}>
+                  {d.role}:{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail(d.email);
+                      setPassword(d.password);
+                    }}
+                  >
+                    {d.email}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

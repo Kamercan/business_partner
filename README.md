@@ -12,28 +12,44 @@ başvurularını **tek merkezde toplar**, ürün grubuna göre **filtrelenebilir
 
 ---
 
-## Hızlı başlangıç
+## Yayınlama (terminal gerekmez)
+
+Uygulamayı internete almak için bilgisayarınıza bir şey kurmanız gerekmez —
+Railway'in web arayüzünden depoyu seçmek yeterlidir. Uygulama ilk açılışta
+veritabanını, ürün gruplarını ve yönetici hesabını kendiliğinden oluşturur.
+
+👉 **Adım adım kılavuz: [DEPLOY.md](DEPLOY.md)**
+
+Kök dizindeki `Dockerfile` standarttır; Render, Fly.io veya kendi sunucunuzdaki
+Docker üzerinde de aynı şekilde çalışır. Tek gereklilik `/data` yoluna kalıcı
+bir disk bağlamaktır.
+
+## Yerel geliştirme
 
 ```bash
 npm install                 # bağımlılıklar (server + web)
 cp server/.env.example server/.env
-npm run db:seed             # şema + taksonomi + demo veriler
 npm run dev                 # API :4000 · Web :5173
 ```
 
-Tarayıcıda <http://localhost:5173> adresini açın.
+Tarayıcıda <http://localhost:5173> adresini açın. Veritabanı ilk çalıştırmada
+otomatik kurulur; `npm run db:seed` yalnızca elle müdahale için gereklidir.
 
 ### Demo hesapları
+
+Bu hesaplar yalnızca **demo modunda** (`SEED_DEMO=true`) oluşturulur ve giriş
+ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 
 | Rol | E-posta | Şifre | Ne yapabilir |
 |---|---|---|---|
 | Satınalma / Moderatör | `satinalma@yanmar.com.tr` | `Moderator123!` | Başvuruları değerlendirir, onaylar, Excel'e aktarır, sözleşme açar |
 | Kalite Birimi | `kalite@yanmar.com.tr` | `Kalite123!` | Denetim yapar, A/B/C/D notu verir, uygunsuzluk açar |
-| Yönetici | `admin@yanmar.com.tr` | `Admin123!` | Tümü + kullanıcı ve taksonomi yönetimi |
 | İzleyici | `izleme@yanmar.com.tr` | `Viewer123!` | Salt okunur raporlama |
+| Yönetici | `admin@yanmar.com.tr` | yerelde `Admin123!` | Tümü + kullanıcı ve taksonomi yönetimi |
 
-> Üretime almadan önce `server/.env` içindeki `JWT_SECRET` değerini ve tüm demo şifrelerini
-> mutlaka değiştirin.
+> Üretimde yönetici parolası `SEED_ADMIN_PASSWORD` ile belirlenir; tanımlanmazsa
+> sistem güçlü bir parola üretip ilk açılış loglarında bir kez gösterir.
+> Gerçek kullanıma geçerken `SEED_DEMO=false` yapın.
 
 ### Önemli adresler
 
@@ -134,8 +150,8 @@ Harici servis bağımlılığı yoktur; SMTP opsiyoneldir.
 | `npm run dev` | API + web geliştirme sunucuları |
 | `npm run build` | Üretim derlemesi (`server/dist`, `web/dist`) |
 | `npm start` | Üretim sunucusu — `web/dist` varsa aynı porttan servis edilir |
-| `npm run db:seed` | Referans veriler + demo kayıtlar |
-| `npm run db:seed -- --no-demo` | Yalnızca taksonomi ve yönetici hesabı (gerçek kurulum) |
+| `npm run db:seed` | Referans veriler + demo kayıtlar (sunucu ilk açılışta zaten yapar) |
+| `SEED_DEMO=false npm run db:seed` | Yalnızca taksonomi ve yönetici hesabı (gerçek kurulum) |
 | `npm run db:reset` | Veritabanını ve yüklenen dosyaları siler (yalnızca geliştirme) |
 | `npm run typecheck` | Tip kontrolü (server + web) |
 
@@ -168,12 +184,14 @@ Ayrıntılar için [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
 
 ## Üretime alırken
 
-1. `JWT_SECRET` için en az 32 karakterlik rastgele bir değer üretin (`openssl rand -base64 48`).
-2. Tüm demo hesaplarının şifrelerini değiştirin veya hesapları pasifleştirin.
-3. `NODE_ENV=production` ile çalıştırın (CSP ve güvenli çerez devreye girer).
-4. HTTPS sonlandıran bir ters proxy (nginx/Caddy) arkasına alın.
-5. SMTP bilgilerini girin; aksi hâlde bildirimler yalnızca kutuya kaydedilir.
-6. `server/data/` (veritabanı) ve `server/storage/` (yüklenen belgeler) dizinlerini yedekleme
-   kapsamına alın.
+1. `SEED_DEMO=false` yapın — örnek kayıtlar ve demo hesapları oluşturulmaz.
+2. `SEED_ADMIN_PASSWORD` ve `JWT_SECRET` değerlerini tanımlayın
+   (`JWT_SECRET` en az 32 karakter; boş bırakılırsa sistem üretir).
+3. Kalıcı diski `DATA_DIR` yoluna bağlayın — veritabanı ve yüklenen belgeler
+   burada durur, yedekleme kapsamına alın.
+4. `NODE_ENV=production` ile çalıştırın (CSP ve güvenli çerez devreye girer).
+   Dockerfile bunu zaten ayarlar.
+5. HTTPS kullanın (Railway/Render otomatik sağlar; kendi sunucunuzda nginx/Caddy).
+6. SMTP bilgilerini girin; aksi hâlde bildirimler yalnızca e-posta kutusuna kaydedilir.
 7. Eş zamanlı kullanıcı sayısı arttığında SQLite yerine PostgreSQL'e geçiş için
    [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) içindeki nota bakın.

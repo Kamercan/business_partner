@@ -1,20 +1,25 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
-import { db, migrate } from './db/index.js';
+import { db } from './db/index.js';
+import { bootstrapDatabase } from './db/bootstrap.js';
 
-migrate();
-
-const userCount = (db.prepare('SELECT COUNT(*) AS c FROM users').get() as { c: number }).c;
-if (userCount === 0) {
-  console.warn('⚠  Hiç kullanıcı yok. `npm run db:seed` çalıştırarak yönetici hesabı oluşturun.');
-}
+/**
+ * İlk açılışta veritabanı şeması uygulanır, referans veriler ve yönetici
+ * hesabı oluşturulur. Bu sayede dağıtım için elle komut çalıştırmak gerekmez —
+ * uygulamayı başlatmak yeterlidir.
+ */
+bootstrapDatabase();
 
 const app = createApp();
 const server = app.listen(config.port, () => {
-  console.log(`▸ Business Partner API  http://localhost:${config.port}  [${config.env}]`);
-  console.log(`▸ İzin verilen origin:  ${config.corsOrigins.join(', ')}`);
+  console.log(`▸ Business Partner Portal  http://localhost:${config.port}  [${config.env}]`);
+  console.log(`▸ Genel adres:  ${config.publicBaseUrl}`);
+  if (config.demoMode) {
+    console.log('▸ DEMO MODU AÇIK — örnek kayıtlar ve rol hesapları yüklü.');
+    console.log('  Gerçek kullanımda SEED_DEMO=false yapın.');
+  }
   if (!config.smtp.host) {
-    console.log('▸ SMTP tanımlı değil — bildirimler yalnızca e-posta kutusuna kaydedilecek.');
+    console.log('▸ SMTP tanımlı değil — bildirimler e-posta kutusuna kaydedilecek.');
   }
 });
 

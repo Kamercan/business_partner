@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { config } from '../config.js';
 import { db, getSetting, setSetting } from '../db/index.js';
 import { logActivity } from '../lib/activity.js';
 import {
@@ -41,6 +42,8 @@ metaRoutes.get(
       statuses: APPLICATION_STATUSES,
       sources: APPLICATION_SOURCES,
       org: { name: getSetting('org.name', 'Yanmar Türkiye Makine Sanayi A.Ş.'), short: getSetting('org.short', 'Yanmar Türkiye') },
+      /** Demo modunda giriş ekranı örnek hesapları gösterir. */
+      demoMode: config.demoMode,
       sla: {
         reviewDays: Number(getSetting('sla.review_days', '10')),
         auditDays: Number(getSetting('sla.audit_days', '30')),
