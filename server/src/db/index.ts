@@ -35,7 +35,23 @@ export function migrate(): void {
   addColumnIfMissing('suppliers', 'password_hash', 'TEXT');
   addColumnIfMissing('suppliers', 'portal_last_login_at', 'TEXT');
 
+  // E-posta kutusu gelen/giden ayrımı (sonradan eklendi)
+  addColumnIfMissing('mail_outbox', 'audience', "TEXT NOT NULL DEFAULT 'SUPPLIER'");
+  backfillMailAudience();
+
   migratePortalTokenPurposes();
+}
+
+/**
+ * Sütun sonradan eklendiği için eski kayıtlar varsayılan 'SUPPLIER' ile
+ * gelir. Alıcısı bir Yanmar kullanıcısı olanlar 'INTERNAL' olarak düzeltilir.
+ */
+function backfillMailAudience(): void {
+  db.prepare(
+    `UPDATE mail_outbox SET audience = 'INTERNAL'
+      WHERE audience != 'INTERNAL'
+        AND lower(to_email) IN (SELECT lower(email) FROM users)`,
+  ).run();
 }
 
 /**

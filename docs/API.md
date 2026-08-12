@@ -133,7 +133,8 @@ Tüm maddeler puanlanmadan tamamlanamaz.
 | `PATCH` | `/admin/tasks/:id` | yazma | Durum, sorumlu, termin |
 | `POST` | `/admin/tasks/:id/claim` | yazma | Görevi üstlen |
 | `GET` | `/admin/stats/dashboard` | tümü | Pano göstergeleri |
-| `GET` | `/admin/stats/outbox` | tümü | E-posta kutusu |
+| `GET` | `/admin/stats/outbox` | tümü | E-posta kutusu (`audience=INTERNAL\|SUPPLIER`, `counts` döner) |
+| `GET` | `/admin/stats/outbox/:id` | tümü | Bildirimin gövdesi (önizleme) |
 | `GET` | `/admin/stats/activity` | tümü | Sistem geneli denetim izi |
 | `GET` | `/admin/users` | tümü | Atama listesi |
 | `GET` | `/admin/users/all` | ADMIN | Tüm kullanıcılar |
@@ -177,6 +178,9 @@ alınan tedarikçinin açık oturumu anında kapanır.
 | `POST` | `/supplier/ncrs/:id/respond` | 8D düzeltici faaliyet cevabı |
 | `POST` | `/supplier/ncrs/:id/documents` | Uygunsuzluğa belge ekleme |
 | `GET` | `/supplier/contracts` | Firmayla yapılan sözleşmeler |
+| `GET` | `/supplier/mails` | **Gelen kutusu** — yalnızca kendi adresine giden yazışmalar |
+| `GET` | `/supplier/mails/:id` | Bildirimin gövdesi (önizleme) |
+| `GET` | `/supplier/submissions` | **Gönderilen kutusu** — kendi belge ve 8D gönderimleri |
 
 Yönetim tarafında: `POST /admin/suppliers/:id/portal-invite` — parola oluşturma
 bağlantısını yeniden gönderir.

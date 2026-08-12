@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { config } from '../config.js';
+import { DEMO_SUPPLIER_HASH_KEY, DEMO_SUPPLIER_PASSWORD } from '../db/bootstrap.js';
 import { db, getSetting, setSetting } from '../db/index.js';
 import { logActivity } from '../lib/activity.js';
 import { APPLICATION_STATUSES, COUNTRIES, EMPLOYEE_BANDS, REVENUE_BANDS } from '../lib/constants.js';
@@ -8,6 +9,26 @@ import { ah, notFound, parse } from '../lib/http.js';
 import { actorOf, requireAuth, requireRole } from '../middleware/auth.js';
 
 export const metaRoutes = Router();
+
+/**
+ * Demo modunda, portal girişini denemek için kullanılabilecek onaylı
+ * tedarikçiler. Yalnızca parolası hâlâ demo parolası olanlar listelenir —
+ * tedarikçi kendi parolasını belirlediği anda özeti değişir ve listeden
+ * düşer. Demo modu kapalıyken liste her zaman boştur.
+ */
+function demoSupplierLogins(): Array<{ company_name: string; email: string; password: string }> {
+  if (!config.demoMode) return [];
+  const hash = getSetting(DEMO_SUPPLIER_HASH_KEY, '');
+  if (!hash) return [];
+  const rows = db
+    .prepare(
+      `SELECT company_name, email FROM suppliers
+        WHERE password_hash = ? AND status IN ('APPROVED','CONDITIONAL')
+        ORDER BY id LIMIT 3`,
+    )
+    .all(hash) as Array<{ company_name: string; email: string }>;
+  return rows.map((r) => ({ ...r, password: DEMO_SUPPLIER_PASSWORD }));
+}
 
 /**
  * Kamuya açık referans veriler — başvuru formu bu uçtan beslenir.
@@ -37,6 +58,7 @@ metaRoutes.get(
       org: { name: getSetting('org.name', 'Yanmar Türkiye Makine Sanayi A.Ş.'), short: getSetting('org.short', 'Yanmar Türkiye') },
       /** Demo modunda giriş ekranı örnek hesapları gösterir. */
       demoMode: config.demoMode,
+      demoSuppliers: demoSupplierLogins(),
       sla: {
         reviewDays: Number(getSetting('sla.review_days', '10')),
         auditDays: Number(getSetting('sla.audit_days', '30')),

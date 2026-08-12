@@ -206,6 +206,8 @@ supplierRoutes.use('/me', requireSupplier);
 supplierRoutes.use('/documents', requireSupplier);
 supplierRoutes.use('/ncrs', requireSupplier);
 supplierRoutes.use('/contracts', requireSupplier);
+supplierRoutes.use('/mails', requireSupplier);
+supplierRoutes.use('/submissions', requireSupplier);
 supplierRoutes.use('/change-password', requireSupplier);
 
 supplierRoutes.get(
@@ -465,6 +467,71 @@ supplierRoutes.post(
       detail: stored.map((f) => f.originalName).join(', '),
     });
     res.status(201).json({ ok: true });
+  }),
+);
+
+/**
+ * Firmaya gönderilen bildirimler — tedarikçi kendi yazışma geçmişini görür.
+ * Yanmar'ın iç bildirimleri buraya asla düşmez (audience = SUPPLIER filtresi)
+ * ve yalnızca kendi e-posta adresine gidenler listelenir.
+ */
+supplierRoutes.get(
+  '/mails',
+  ah((req, res) => {
+    const rows = db
+      .prepare(
+        `SELECT id, subject, template, status, created_at, sent_at
+           FROM mail_outbox
+          WHERE audience = 'SUPPLIER' AND lower(to_email) = lower(?)
+          ORDER BY id DESC LIMIT 100`,
+      )
+      .all(req.supplier!.email);
+    res.json(rows);
+  }),
+);
+
+supplierRoutes.get(
+  '/mails/:id',
+  ah((req, res) => {
+    const row = db
+      .prepare(
+        `SELECT id, subject, body_html, template, status, created_at, sent_at
+           FROM mail_outbox
+          WHERE id = ? AND audience = 'SUPPLIER' AND lower(to_email) = lower(?)`,
+      )
+      .get(Number(req.params.id), req.supplier!.email);
+    if (!row) throw notFound('Bildirim bulunamadı.');
+    res.json(row);
+  }),
+);
+
+/**
+ * Tedarikçinin Yanmar'a gönderdikleri — portalda "Gönderilen" kutusu.
+ * Uygunsuzluk cevapları ve belge yüklemeleri, tedarikçinin kendi hareket
+ * kayıtlarından türetilir; başka bir firmanın kaydı asla listelenmez.
+ */
+supplierRoutes.get(
+  '/submissions',
+  ah((req, res) => {
+    const s = req.supplier!;
+    const rows = db
+      .prepare(
+        `SELECT a.id, a.action, a.entity_type, a.entity_id, a.detail, a.created_at,
+                (SELECT n.ncr_no FROM ncrs n WHERE n.id = a.entity_id) AS ncr_no
+           FROM activity_log a
+          WHERE lower(a.actor_label) = lower(?)
+            AND a.action IN ('SUPPLIER_DOCUMENT_UPLOADED','STATUS_CHANGED')
+            AND (a.action <> 'STATUS_CHANGED' OR a.to_value = 'SUPPLIER_RESPONDED')
+            AND (
+              (a.entity_type = 'SUPPLIER' AND a.entity_id = ?)
+              OR (a.entity_type = 'NCR' AND a.entity_id IN (SELECT id FROM ncrs WHERE supplier_id = ?))
+            )
+          ORDER BY a.id DESC LIMIT 100`,
+      )
+      .all(s.email, s.id, s.id) as Array<Record<string, unknown>>;
+
+    // ncr_no yalnızca uygunsuzluk kayıtları için anlamlıdır.
+    res.json(rows.map((r) => ({ ...r, ncr_no: r.entity_type === 'NCR' ? r.ncr_no : null })));
   }),
 );
 

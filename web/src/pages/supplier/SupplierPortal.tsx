@@ -16,6 +16,7 @@ import {
   label,
   tone,
 } from '../../lib/labels';
+import { MAIL_LINK_NOTE, extractLinks } from '../../lib/mailLinks';
 import { YanmarLogo } from '../public/PublicShell';
 
 type Me = {
@@ -46,7 +47,23 @@ type Contract = {
   start_date: string | null; end_date: string | null; currency: string; value: number | null;
 };
 
-type Tab = 'ozet' | 'uygunsuzluk' | 'belge' | 'sozlesme';
+type Mail = {
+  id: number; subject: string; template: string | null; status: string;
+  created_at: string; sent_at: string | null; body_html?: string;
+};
+
+type Submission = {
+  id: number; action: string; entity_type: string; entity_id: number;
+  detail: string | null; created_at: string; ncr_no: string | null;
+};
+
+type Tab = 'ozet' | 'uygunsuzluk' | 'belge' | 'sozlesme' | 'yazisma';
+
+/** Tedarikçinin kendi gönderdiklerinin okunabilir başlıkları. */
+const SUBMISSION_LABEL: Record<string, string> = {
+  SUPPLIER_DOCUMENT_UPLOADED: 'Belge gönderdiniz',
+  STATUS_CHANGED: 'Düzeltici faaliyet planı gönderdiniz',
+};
 
 /** Onaylı tedarikçinin kendi alanı — parolayla giriş yaptıktan sonra. */
 export default function SupplierPortal() {
@@ -65,6 +82,10 @@ export default function SupplierPortal() {
   const [form, setForm] = useState({ containment: '', root_cause: '', corrective_action: '', preventive_action: '' });
   const [pwModal, setPwModal] = useState(false);
   const [pw, setPw] = useState({ current_password: '', new_password: '' });
+  const [box, setBox] = useState<'gelen' | 'giden'>('gelen');
+  const [mails, setMails] = useState<Mail[] | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[] | null>(null);
+  const [mailPreview, setMailPreview] = useState<Mail | null>(null);
 
   const load = useCallback(() => {
     api
@@ -80,7 +101,10 @@ export default function SupplierPortal() {
     if (tab === 'uygunsuzluk' && !ncrs) api.get<Ncr[]>('/supplier/ncrs').then(setNcrs).catch(() => setNcrs([]));
     if (tab === 'belge' && !docs) api.get<Doc[]>('/supplier/documents').then(setDocs).catch(() => setDocs([]));
     if (tab === 'sozlesme' && !contracts) api.get<Contract[]>('/supplier/contracts').then(setContracts).catch(() => setContracts([]));
-  }, [tab, me, ncrs, docs, contracts]);
+    if (tab === 'yazisma' && box === 'gelen' && !mails) api.get<Mail[]>('/supplier/mails').then(setMails).catch(() => setMails([]));
+    if (tab === 'yazisma' && box === 'giden' && !submissions)
+      api.get<Submission[]>('/supplier/submissions').then(setSubmissions).catch(() => setSubmissions([]));
+  }, [tab, me, ncrs, docs, contracts, box, mails, submissions]);
 
   if (authFailed || !supplierToken.get()) return <Navigate to="/business-partner?giris=tedarikci" replace />;
   if (!me) return <Loading />;
@@ -185,6 +209,7 @@ export default function SupplierPortal() {
             ['uygunsuzluk', `Uygunsuzluklar${me.summary.openNcrs ? ` (${me.summary.openNcrs})` : ''}`],
             ['belge', 'Belgeler'],
             ['sozlesme', `Sözleşmeler${me.summary.activeContracts ? ` (${me.summary.activeContracts})` : ''}`],
+            ['yazisma', 'Yazışmalar'],
           ] as Array<[Tab, string]>).map(([key, text]) => (
             <button key={key} type="button" className={`tab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
               {text}
@@ -372,7 +397,106 @@ export default function SupplierPortal() {
             )}
           </div>
         )}
+
+        {/* ------------------------------ Yazışmalar ---------------------------- */}
+        {tab === 'yazisma' && (
+          <div className="bp-panel">
+            <div className="tabs" style={{ marginTop: -4 }}>
+              {([
+                ['gelen', 'Gelen'],
+                ['giden', 'Gönderilen'],
+              ] as Array<['gelen' | 'giden', string]>).map(([key, text]) => (
+                <button key={key} type="button" className={`tab ${box === key ? 'active' : ''}`} onClick={() => setBox(key)}>
+                  {text}
+                </button>
+              ))}
+            </div>
+
+            {box === 'gelen' ? (
+              <>
+                <p className="small muted" style={{ marginBottom: 12 }}>
+                  Yanmar'ın firmanıza gönderdiği bildirimler.
+                </p>
+                {!mails ? (
+                  <Loading />
+                ) : mails.length === 0 ? (
+                  <div className="empty">Henüz bildirim yok.</div>
+                ) : (
+                  mails.map((m) => (
+                    <div className="row-between wrap sp-item" key={m.id}>
+                      <div>
+                        <strong style={{ fontSize: 14 }}>{m.subject}</strong>
+                        <div className="small muted">{formatDate(m.created_at, true)}</div>
+                      </div>
+                      <button
+                        className="btn btn-sm"
+                        type="button"
+                        onClick={() => api.get<Mail>(`/supplier/mails/${m.id}`).then(setMailPreview).catch(() => undefined)}
+                      >
+                        Aç
+                      </button>
+                    </div>
+                  ))
+                )}
+              </>
+            ) : (
+              <>
+                <p className="small muted" style={{ marginBottom: 12 }}>
+                  Portal üzerinden Yanmar'a gönderdikleriniz.
+                </p>
+                {!submissions ? (
+                  <Loading />
+                ) : submissions.length === 0 ? (
+                  <div className="empty">Henüz bir gönderiminiz yok.</div>
+                ) : (
+                  submissions.map((x) => (
+                    <div className="sp-item" key={x.id}>
+                      <div className="row-between wrap">
+                        <strong style={{ fontSize: 14 }}>{SUBMISSION_LABEL[x.action] ?? x.action}</strong>
+                        <span className="small muted">{formatDate(x.created_at, true)}</span>
+                      </div>
+                      <div className="small muted" style={{ marginTop: 4 }}>
+                        {x.ncr_no && <span className="mono">{x.ncr_no} · </span>}
+                        {x.detail ?? '—'}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* --------------------------- Bildirim önizleme -------------------------- */}
+      {mailPreview && (
+        <Modal title={mailPreview.subject} subtitle={formatDate(mailPreview.created_at, true)} onClose={() => setMailPreview(null)}>
+          {(() => {
+            const links = mailPreview.body_html ? extractLinks(mailPreview.body_html) : [];
+            return links.length > 0 ? (
+              <div className="mail-links">
+                <div className="section-label" style={{ marginBottom: 8 }}>
+                  E-postadaki bağlantılar
+                </div>
+                {links.map((l) => (
+                  <a key={l.href} className="btn btn-sm" href={l.href} target="_blank" rel="noreferrer noopener">
+                    {l.text} ↗
+                  </a>
+                ))}
+                <div className="small muted" style={{ marginTop: 8, width: '100%' }}>
+                  {MAIL_LINK_NOTE}
+                </div>
+              </div>
+            ) : null;
+          })()}
+          <iframe
+            title="E-posta önizleme"
+            srcDoc={mailPreview.body_html}
+            sandbox=""
+            style={{ width: '100%', height: 420, border: '1px solid var(--line)', borderRadius: 6, background: '#fff' }}
+          />
+        </Modal>
+      )}
 
       {/* --------------------------- 8D cevap modalı --------------------------- */}
       {respondTo && (

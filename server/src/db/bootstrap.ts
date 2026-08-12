@@ -5,7 +5,7 @@
  */
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { db, migrate, setSetting } from './index.js';
+import { db, getSetting, migrate, setSetting } from './index.js';
 import { config } from '../config.js';
 import { normalizeCompany } from '../lib/text.js';
 import { computeCompleteness } from '../lib/scoring.js';
@@ -571,12 +571,44 @@ export function seedDemo(): void {
  * yönetici hesabını oluşturur. Her açılışta güvenle çağrılabilir (idempotent) —
  * böylece dağıtım sırasında elle komut çalıştırmaya gerek kalmaz.
  */
+/** Demo modunda onaylı tedarikçilerin portal girişini kullanıma açar. */
+export const DEMO_SUPPLIER_PASSWORD = 'Tedarikci123!';
+
+/** Demo parolasının özeti — ayarlarda saklanır ki her açılışta aynı kalsın. */
+export const DEMO_SUPPLIER_HASH_KEY = 'demo.supplier_password_hash';
+
+/**
+ * Demo modunda, parolası olmayan onaylı tedarikçilere bilinen bir demo
+ * parolası atar. Idempotenttir: parolasını kendisi belirlemiş tedarikçiye
+ * dokunmaz, böylece demo verisi gerçek kullanımı bozmaz.
+ *
+ * Özet bir kez üretilip ayarlarda saklanır. Böylece giriş ekranı, hangi
+ * tedarikçinin hâlâ demo parolasını kullandığını (bcrypt hesabı yapmadan)
+ * yalnızca özetleri karşılaştırarak anlayabilir.
+ */
+function enableDemoSupplierLogins(): void {
+  const hash = getSetting(DEMO_SUPPLIER_HASH_KEY, '') || bcrypt.hashSync(DEMO_SUPPLIER_PASSWORD, 10);
+  setSetting(DEMO_SUPPLIER_HASH_KEY, hash);
+  const res = db
+    .prepare(
+      `UPDATE suppliers SET password_hash = ?
+        WHERE password_hash IS NULL AND status IN ('APPROVED','CONDITIONAL')`,
+    )
+    .run(hash);
+  if (res.changes > 0) {
+    console.log(`· demo: ${res.changes} onaylı tedarikçi için portal girişi açıldı (parola: ${DEMO_SUPPLIER_PASSWORD})`);
+  }
+}
+
 export function bootstrapDatabase(): void {
   migrate();
   seedReference();
 
   const { adminCreated, adminPassword } = seedUsers();
-  if (config.demoMode) seedDemo();
+  if (config.demoMode) {
+    seedDemo();
+    enableDemoSupplierLogins();
+  }
 
   if (adminCreated) {
     const line = '─'.repeat(58);

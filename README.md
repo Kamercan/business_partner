@@ -54,6 +54,12 @@ ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 > sistem güçlü bir parola üretip ilk açılış loglarında bir kez gösterir.
 > Gerçek kullanıma geçerken `SEED_DEMO=false` yapın.
 
+**Demo tedarikçi hesapları.** Demo modunda onaylı tedarikçilerin portal girişi de
+açıktır; parola hepsinde `Tedarikci123!`'tür ve hesaplar
+`/business-partner` → *Onaylı tedarikçiyim* ekranında listelenir. Liste canlı
+veriden gelir: parolasını kendisi değiştiren tedarikçi listeden düşer, böylece
+gerçek bir hesabın parolası hiçbir zaman gösterilmez.
+
 ### Önemli adresler
 
 | Adres | Açıklama |
@@ -126,7 +132,7 @@ Bunlar görüşmede istenmedi ancak sistemin gerçekten kullanılabilir olması 
 | **Tedarikçi self-servis bağlantısı** | Faz 4'ün dosya alışverişi ve NCR cevapları için tedarikçiye hesap açmadan (görüşmedeki "tedarikçinin panele ihtiyacı yok" kuralını bozmadan) süreli, tek varlığa kapsamlı imzalı bağlantı verilir. |
 | **İş sırası (görev kuyruğu)** | Faz 3'teki "kalite ekranına task düşmeli" ihtiyacının genelleştirilmiş hâli: her birim kendi kuyruğunu, terminleri ve gecikmeleri görür. |
 | **Denetim izi (activity log)** | ISO 9001 / IATF 16949 denetimlerinde "bu kararı kim, ne zaman, hangi gerekçeyle verdi?" sorusunun cevabı. Arayüzden silinemez. |
-| **E-posta kutusu** | SMTP kurulmadan da sistem çalışır; tüm bildirimler kayda geçer ve panelden görüntülenir. Demo ve devreye alma için kritik. |
+| **E-posta kutusu** | SMTP kurulmadan da sistem çalışır; tüm bildirimler kayda geçer ve panelden görüntülenir. Kutu ikiye ayrılır: *ekibe gelen* ve *tedarikçilere gönderilen*. Önizlemedeki bağlantılar buton olarak sunulur. Tedarikçi de kendi hesabında gelen/gönderilen yazışmalarını görür. |
 | **Doluluk skoru** | Başvurular 0–100 arası puanlanır; moderatör 200 kayıtlık havuzda hangisine önce bakacağını bilir. |
 | **SLA takibi ve pano** | Hedef sürenin aşıldığı başvurular panoda öne çıkar; ortalama değerlendirme ve denetim süreleri ölçülür. |
 | **Yönetilebilir taksonomi** | Yeni ürün grubu/sertifika eklemek kod değişikliği gerektirmez; forma ve filtrelere anında yansır. |

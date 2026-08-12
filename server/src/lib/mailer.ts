@@ -32,9 +32,14 @@ export async function sendMail(params: {
   if (recipients.length === 0) return;
 
   const insert = db.prepare(
-    `INSERT INTO mail_outbox (to_email, subject, body_html, template, entity_type, entity_id, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO mail_outbox (to_email, audience, subject, body_html, template, entity_type, entity_id, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
+  /**
+   * Alıcı Yanmar kullanıcı listesindeyse ekip bildirimi, değilse tedarikçiye
+   * gönderilen yazışmadır. Böylece her çağrı yerine tek noktada sınıflandırılır.
+   */
+  const isStaff = db.prepare('SELECT 1 FROM users WHERE lower(email) = lower(?)');
   const markSent = db.prepare("UPDATE mail_outbox SET status = 'SENT', sent_at = datetime('now') WHERE id = ?");
   const markFailed = db.prepare("UPDATE mail_outbox SET status = 'FAILED', error = ? WHERE id = ?");
 
@@ -42,6 +47,7 @@ export async function sendMail(params: {
   for (const to of recipients) {
     const res = insert.run(
       to,
+      isStaff.get(to) ? 'INTERNAL' : 'SUPPLIER',
       params.subject,
       params.html,
       params.template ?? null,

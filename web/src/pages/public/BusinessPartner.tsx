@@ -11,6 +11,9 @@ import { LangToggle, YanmarLogo } from './PublicShell';
 
 type Side = 'supplier' | 'approved' | 'team';
 
+/** Demo modunda portal girişini denemek için hazır onaylı tedarikçi hesabı. */
+type DemoSupplier = { company_name: string; email: string; password: string };
+
 type TrackResult = {
   ref_no: string;
   company_name: string;
@@ -75,13 +78,15 @@ export default function BusinessPartner() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginBusy, setLoginBusy] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
+  const [demoSuppliers, setDemoSuppliers] = useState<DemoSupplier[]>([]);
 
   useEffect(() => {
     api
-      .get<Meta & { demoMode?: boolean }>('/meta')
+      .get<Meta & { demoMode?: boolean; demoSuppliers?: DemoSupplier[] }>('/meta')
       .then((m) => {
         setMeta(m);
         setDemoMode(!!m.demoMode);
+        setDemoSuppliers(m.demoSuppliers ?? []);
       })
       .catch(() => undefined);
   }, []);
@@ -365,6 +370,37 @@ export default function BusinessPartner() {
               >
                 {lang === 'tr' ? 'Parolamı unuttum / henüz oluşturmadım' : 'Forgot password / not set yet'}
               </button>
+
+              {demoMode && demoSuppliers.length > 0 && (
+                <div className="demo-accounts">
+                  <strong>{lang === 'tr' ? 'Demo tedarikçi hesapları' : 'Demo supplier accounts'}</strong>
+                  {lang === 'tr' ? ' — satıra tıklayın, alanlar dolsun' : ' — click a row to fill the fields'}
+                  <div className="demo-list">
+                    {demoSuppliers.map((d) => (
+                      <button
+                        key={d.email}
+                        type="button"
+                        className="demo-row"
+                        onClick={() => {
+                          setSpEmail(d.email);
+                          setSpPassword(d.password);
+                          setSpError(null);
+                        }}
+                      >
+                        <span className="demo-role">{d.company_name}</span>
+                        <span className="demo-cred">
+                          {d.email} <span className="demo-sep">/</span> {d.password}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="demo-note">
+                    {lang === 'tr'
+                      ? 'Bu hesaplar yalnızca demo verisi içindir. Gerçek tedarikçiler parolalarını onay e-postasındaki bağlantıdan kendileri belirler; parolasını değiştiren tedarikçi bu listede görünmez.'
+                      : 'These accounts exist only in demo data. Real suppliers set their own password from the approval email; a supplier who changes it disappears from this list.'}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

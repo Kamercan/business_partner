@@ -393,6 +393,9 @@ CREATE INDEX IF NOT EXISTS idx_log_entity ON activity_log(entity_type, entity_id
 CREATE TABLE IF NOT EXISTS mail_outbox (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   to_email     TEXT NOT NULL,
+  -- Alıcı Yanmar personeli mi (INTERNAL) yoksa tedarikçi mi (SUPPLIER)?
+  -- Kutunun "ekibe gelen" / "tedarikçilere gönderilen" ayrımı buna dayanır.
+  audience     TEXT NOT NULL DEFAULT 'SUPPLIER' CHECK (audience IN ('INTERNAL','SUPPLIER')),
   subject      TEXT NOT NULL,
   body_html    TEXT NOT NULL,
   template     TEXT,

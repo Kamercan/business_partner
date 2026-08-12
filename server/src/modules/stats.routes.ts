@@ -130,20 +130,41 @@ statsRoutes.get(
   }),
 );
 
-/** E-posta kutusu — gönderilen/kaydedilen tüm bildirimler. */
+/**
+ * E-posta kutusu.
+ *
+ * `audience=INTERNAL` → Yanmar ekibine düşen bildirimler ("gelen kutusu")
+ * `audience=SUPPLIER` → tedarikçilere gönderilen yazışmalar ("giden kutusu")
+ */
 statsRoutes.get(
   '/outbox',
   ah((req, res) => {
     const page = Math.max(1, Number(req.query.page ?? 1));
     const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize ?? 30)));
-    const total = (db.prepare('SELECT COUNT(*) c FROM mail_outbox').get() as { c: number }).c;
+    const audience = req.query.audience === 'INTERNAL' || req.query.audience === 'SUPPLIER' ? req.query.audience : null;
+
+    const where = audience ? 'WHERE audience = ?' : '';
+    const params = audience ? [audience] : [];
+    const total = (db.prepare(`SELECT COUNT(*) c FROM mail_outbox ${where}`).get(...params) as { c: number }).c;
     const rows = db
       .prepare(
-        `SELECT id, to_email, subject, template, entity_type, entity_id, status, error, created_at, sent_at
-           FROM mail_outbox ORDER BY id DESC LIMIT ? OFFSET ?`,
+        `SELECT id, to_email, audience, subject, template, entity_type, entity_id, status, error, created_at, sent_at
+           FROM mail_outbox ${where} ORDER BY id DESC LIMIT ? OFFSET ?`,
       )
-      .all(pageSize, (page - 1) * pageSize);
-    res.json({ rows, total, page, pageSize, pageCount: Math.max(1, Math.ceil(total / pageSize)) });
+      .all(...params, pageSize, (page - 1) * pageSize);
+
+    const counts = db
+      .prepare("SELECT SUM(audience = 'INTERNAL') AS internal, SUM(audience = 'SUPPLIER') AS supplier FROM mail_outbox")
+      .get() as { internal: number | null; supplier: number | null };
+
+    res.json({
+      rows,
+      total,
+      page,
+      pageSize,
+      pageCount: Math.max(1, Math.ceil(total / pageSize)),
+      counts: { internal: counts.internal ?? 0, supplier: counts.supplier ?? 0 },
+    });
   }),
 );
 

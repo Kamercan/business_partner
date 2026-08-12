@@ -373,6 +373,22 @@ dl.kv dt:last-of-type, dl.kv dd:last-of-type { border-bottom: none; }
 }
 .demo-note code { font-family: var(--mono); color: var(--ink-2); }
 
+/* --------------------- E-posta önizlemesindeki bağlantılar ----------------- */
+/* Önizleme kısıtlı (sandbox) bir çerçevede gösterildiği için içerideki
+   bağlantılar tıklanamaz; buradan gerçek bağlantı olarak sunulur. */
+.mail-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-3);
+}
+.mail-links .section-label { width: 100%; }
+.mail-links a.btn { text-decoration: none; max-width: 100%; overflow-wrap: anywhere; }
+
 /* ------------------------------- Sekmeler --------------------------------- */
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 16px; flex-wrap: wrap; }
 .tab {
