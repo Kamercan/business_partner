@@ -17,6 +17,8 @@ import Suppliers from './pages/admin/Suppliers';
 import TasksPage from './pages/admin/Tasks';
 import Users from './pages/admin/Users';
 import BusinessPartner from './pages/public/BusinessPartner';
+import SetPassword from './pages/supplier/SetPassword';
+import SupplierPortal from './pages/supplier/SupplierPortal';
 import Landing from './pages/public/Landing';
 import PortalPage from './pages/public/PortalPage';
 
@@ -46,6 +48,10 @@ export default function App() {
         ki daha önce gönderilmiş e-postalardaki bağlantılar çalışmaya devam etsin.
       */}
       <Route path="/business-partner" element={<BusinessPartner />} />
+
+      {/* Onaylı tedarikçi portalı — parolayı tedarikçi kendisi belirler */}
+      <Route path="/tedarikci/parola/:token" element={<SetPassword />} />
+      <Route path="/tedarikci" element={<SupplierPortal />} />
       <Route path="/basvuru" element={<Navigate to="/business-partner" replace />} />
       <Route path="/basvuru-takip" element={<RedirectKeepQuery to="/business-partner" />} />
       <Route path="/yonetim/giris" element={<Navigate to="/business-partner?giris=ekip" replace />} />

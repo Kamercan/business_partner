@@ -5,10 +5,11 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Loading } from '../../components/ui';
 import { useI18n } from '../../i18n';
 import { APPLICATION_STATUS, formatDate, label, tone } from '../../lib/labels';
+import { supplierToken, type SupplierSession } from '../../auth/supplierSession';
 import ApplicationForm, { type Meta } from './ApplicationForm';
 import { LangToggle, YanmarLogo } from './PublicShell';
 
-type Side = 'supplier' | 'team';
+type Side = 'supplier' | 'approved' | 'team';
 
 type TrackResult = {
   ref_no: string;
@@ -48,7 +49,9 @@ export default function BusinessPartner() {
   const { login, user, loading } = useAuth();
   const [params, setParams] = useSearchParams();
 
-  const [side, setSide] = useState<Side>(params.get('giris') === 'ekip' ? 'team' : 'supplier');
+  const [side, setSide] = useState<Side>(
+    params.get('giris') === 'ekip' ? 'team' : params.get('giris') === 'tedarikci' ? 'approved' : 'supplier',
+  );
   const [meta, setMeta] = useState<Meta | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
@@ -58,6 +61,13 @@ export default function BusinessPartner() {
   const [result, setResult] = useState<TrackResult | null>(null);
   const [trackError, setTrackError] = useState<string | null>(null);
   const [trackBusy, setTrackBusy] = useState(false);
+
+  // Onaylı tedarikçi girişi
+  const [spEmail, setSpEmail] = useState('');
+  const [spPassword, setSpPassword] = useState('');
+  const [spError, setSpError] = useState<string | null>(null);
+  const [spBusy, setSpBusy] = useState(false);
+  const [forgotSent, setForgotSent] = useState<string | null>(null);
 
   // Ekip: giriş
   const [email, setEmail] = useState('');
@@ -98,6 +108,41 @@ export default function BusinessPartner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function supplierLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setSpBusy(true);
+    setSpError(null);
+    try {
+      const data = await api.post<{ token: string; supplier: SupplierSession }>('/supplier/login', {
+        email: spEmail,
+        password: spPassword,
+      });
+      supplierToken.set(data.token);
+      navigate('/tedarikci');
+    } catch (err) {
+      setSpError(err instanceof ApiError ? err.message : 'Giriş yapılamadı.');
+    } finally {
+      setSpBusy(false);
+    }
+  }
+
+  async function supplierForgot() {
+    if (!spEmail.trim()) {
+      setSpError('Önce e-posta adresinizi yazın.');
+      return;
+    }
+    setSpBusy(true);
+    setSpError(null);
+    try {
+      const res = await api.post<{ message: string }>('/supplier/forgot-password', { email: spEmail.trim() });
+      setForgotSent(res.message);
+    } catch (err) {
+      setSpError(err instanceof ApiError ? err.message : 'İşlem başarısız.');
+    } finally {
+      setSpBusy(false);
+    }
+  }
+
   async function submitLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoginBusy(true);
@@ -124,6 +169,7 @@ export default function BusinessPartner() {
     setSide(side_);
     const next = new URLSearchParams(params);
     if (side_ === 'team') next.set('giris', 'ekip');
+    else if (side_ === 'approved') next.set('giris', 'tedarikci');
     else next.delete('giris');
     setParams(next, { replace: true });
   };
@@ -143,11 +189,17 @@ export default function BusinessPartner() {
             : 'Single entry point for supplier applications and evaluation processes.'}
         </p>
 
-        <div className="bp-choice">
+        <div className="bp-choice bp-choice-3">
           <button type="button" className={`bp-choice-card ${side === 'supplier' ? 'on' : ''}`} onClick={() => pick('supplier')}>
-            <span className="bp-choice-title">{lang === 'tr' ? 'Tedarikçiyim' : "I'm a supplier"}</span>
+            <span className="bp-choice-title">{lang === 'tr' ? 'Başvuru yapmak istiyorum' : 'I want to apply'}</span>
             <span className="bp-choice-sub">
-              {lang === 'tr' ? 'Başvuru yapın veya başvurunuzu takip edin' : 'Apply or track your application'}
+              {lang === 'tr' ? 'Yeni başvuru veya başvuru takibi' : 'New application or track an existing one'}
+            </span>
+          </button>
+          <button type="button" className={`bp-choice-card ${side === 'approved' ? 'on' : ''}`} onClick={() => pick('approved')}>
+            <span className="bp-choice-title">{lang === 'tr' ? 'Onaylı tedarikçiyim' : "I'm an approved supplier"}</span>
+            <span className="bp-choice-sub">
+              {lang === 'tr' ? 'Portala girin: belge, uygunsuzluk, sözleşme' : 'Sign in: documents, NCRs, contracts'}
             </span>
           </button>
           <button type="button" className={`bp-choice-card ${side === 'team' ? 'on' : ''}`} onClick={() => pick('team')}>
@@ -262,6 +314,57 @@ export default function BusinessPartner() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------ Onaylı tedarikçi girişi ---------------------- */}
+        {side === 'approved' && (
+          <div className="bp-panel">
+            <div className="bp-login">
+              <h2>{lang === 'tr' ? 'Onaylı tedarikçi girişi' : 'Approved supplier sign-in'}</h2>
+              <p>
+                {lang === 'tr'
+                  ? 'Denetimden geçip onaylanan tedarikçilerimiz içindir. Parolanızı, onay e-postasındaki bağlantıdan kendiniz belirlersiniz.'
+                  : 'For suppliers who passed the audit. You set your own password via the link in the approval email.'}
+              </p>
+
+              {spError && <div className="form-error" style={{ marginTop: 14 }}>{spError}</div>}
+              {forgotSent && (
+                <div className="badge badge-ok" style={{ marginTop: 14, display: 'block', padding: '10px 12px', lineHeight: 1.5 }}>
+                  {forgotSent}
+                </div>
+              )}
+
+              <form onSubmit={supplierLogin} className="stack" style={{ marginTop: 14 }}>
+                <div className="field">
+                  <label>{t('f.email')}</label>
+                  <input type="email" value={spEmail} onChange={(e) => setSpEmail(e.target.value)} autoComplete="username" required />
+                </div>
+                <div className="field">
+                  <label>{lang === 'tr' ? 'Parola' : 'Password'}</label>
+                  <input
+                    type="password"
+                    value={spPassword}
+                    onChange={(e) => setSpPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
+                <button className="btn btn-primary btn-block" type="submit" disabled={spBusy}>
+                  {spBusy && <span className="spinner" />}
+                  {lang === 'tr' ? 'Giriş yap' : 'Sign in'}
+                </button>
+              </form>
+
+              <button
+                type="button"
+                className="bp-link-btn"
+                onClick={supplierForgot}
+                disabled={spBusy}
+              >
+                {lang === 'tr' ? 'Parolamı unuttum / henüz oluşturmadım' : 'Forgot password / not set yet'}
+              </button>
             </div>
           </div>
         )}

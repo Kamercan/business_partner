@@ -281,6 +281,11 @@ CREATE TABLE IF NOT EXISTS suppliers (
   otd_percent     REAL,                      -- zamanında teslimat (Faz 4 performans)
   ppm             REAL,                      -- kalite hata oranı
   notes           TEXT,
+
+  -- Tedarikçi portalı girişi: parolayı tedarikçi kendisi belirler
+  -- (onay e-postasındaki bağlantıyla). Parola yoksa henüz giriş açılmamıştır.
+  password_hash   TEXT,
+  portal_last_login_at TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -407,7 +412,7 @@ CREATE TABLE IF NOT EXISTS mail_outbox (
 CREATE TABLE IF NOT EXISTS portal_tokens (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   token_hash   TEXT NOT NULL UNIQUE,
-  purpose      TEXT NOT NULL CHECK (purpose IN ('TRACK','INFO_REQUEST','NCR_RESPONSE','DOC_EXCHANGE')),
+  purpose      TEXT NOT NULL CHECK (purpose IN ('TRACK','INFO_REQUEST','NCR_RESPONSE','DOC_EXCHANGE','SET_PASSWORD')),
   entity_type  TEXT NOT NULL CHECK (entity_type IN ('APPLICATION','SUPPLIER','NCR')),
   entity_id    INTEGER NOT NULL,
   email        TEXT NOT NULL,

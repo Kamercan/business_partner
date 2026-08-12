@@ -1,4 +1,15 @@
 const TOKEN_KEY = 'bp_token';
+const SUPPLIER_TOKEN_KEY = 'bp_supplier_token';
+
+/**
+ * Hangi jetonun gönderileceğini yol belirler: `/supplier/**` uçları tedarikçi
+ * oturumunu, diğerleri personel oturumunu kullanır. İki oturum aynı tarayıcıda
+ * bir arada bulunabilir ve karışmaz.
+ */
+function tokenForPath(path: string): string | null {
+  const key = path.startsWith('/supplier') ? SUPPLIER_TOKEN_KEY : TOKEN_KEY;
+  return localStorage.getItem(key);
+}
 
 export class ApiError extends Error {
   constructor(
@@ -36,7 +47,7 @@ type Options = {
 
 async function request<T>(path: string, options: Options = {}): Promise<T> {
   const headers: Record<string, string> = {};
-  const token = tokenStore.get();
+  const token = tokenForPath(path);
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let body: BodyInit | undefined;
@@ -65,7 +76,10 @@ async function request<T>(path: string, options: Options = {}): Promise<T> {
 
   const data = await res.json();
   if (!res.ok) {
-    if (res.status === 401 && !path.startsWith('/auth/login')) tokenStore.clear();
+    if (res.status === 401 && !path.includes('/login')) {
+      if (path.startsWith('/supplier')) localStorage.removeItem(SUPPLIER_TOKEN_KEY);
+      else tokenStore.clear();
+    }
     throw new ApiError(res.status, data.error ?? 'Beklenmeyen bir hata oluştu.', data.code, data.details);
   }
   return data as T;
@@ -81,7 +95,7 @@ export const api = {
 
   /** Dosya indirir ve tarayıcıda kaydetme akışını başlatır. */
   async download(path: string, fallbackName: string): Promise<void> {
-    const token = tokenStore.get();
+    const token = tokenForPath(path);
     const res = await fetch(`/api${path}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       credentials: 'include',

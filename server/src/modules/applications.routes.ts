@@ -11,6 +11,7 @@ import {
   notifyApplicationReceived,
   notifyAuditAssigned,
   notifyInfoRequest,
+  notifyPortalInvite,
   notifyStatusChange,
 } from '../lib/notifications.js';
 import { computeCompleteness } from '../lib/scoring.js';
@@ -630,6 +631,19 @@ adminApplications.post(
 
       return { auditId, supplierId };
     });
+
+    // Onaylanan tedarikçiye portal daveti: parolasını kendisi belirler.
+    if (result.supplierId && body.status === 'APPROVED') {
+      const token = randomToken();
+      db.prepare(
+        `INSERT INTO portal_tokens (token_hash, purpose, entity_type, entity_id, email, expires_at)
+         VALUES (?, 'SET_PASSWORD', 'SUPPLIER', ?, ?, datetime('now','+14 days'))`,
+      ).run(sha256(token), result.supplierId, app.email);
+      await notifyPortalInvite(
+        { id: result.supplierId, company_name: app.company_name, email: app.email },
+        token,
+      );
+    }
 
     if (body.notify) {
       await notifyStatusChange(app, body.status, body.note ?? body.rejection_reason ?? null);

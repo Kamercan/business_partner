@@ -22,7 +22,11 @@ Hata gövdesi tek biçimlidir:
 | `POST` | `/portal/:token/documents` | Tedarikçi belge yükleme. |
 | `POST` | `/portal/:token/messages` | Tedarikçi mesajı. |
 | `POST` | `/portal/:token/ncr-response` | 8D düzeltici faaliyet cevabı. |
-| `POST` | `/auth/login` | Giriş. 10/15dk. |
+| `POST` | `/auth/login` | Personel girişi. 10/15dk. |
+| `GET` | `/supplier/set-password/:token` | Parola bağlantısını doğrular (firma adı, e-posta). |
+| `POST` | `/supplier/set-password/:token` | Tedarikçi parolasını belirler. Bağlantı tek kullanımlıktır. |
+| `POST` | `/supplier/login` | Onaylı tedarikçi girişi. 10/15dk. |
+| `POST` | `/supplier/forgot-password` | Parola bağlantısı ister (hesap varlığı sızdırılmaz). |
 | `GET` | `/health` | Sağlık kontrolü. |
 
 ### `POST /applications` alanları
@@ -153,3 +157,26 @@ Tüm maddeler puanlanmadan tamamlanamaz.
 | `409 CONFLICT` | Mükerrer başvuru veya e-posta |
 | `413 FILE_TOO_LARGE` | Dosya boyutu sınırı aşıldı |
 | `429 RATE_LIMITED` | Hız sınırı |
+
+---
+
+## Tedarikçi portalı (`/supplier`, tedarikçi oturumu)
+
+Jetonlar `typ: 'supplier'` taşır ve yönetim uçlarında **kabul edilmez**; personel
+jetonu da bu uçlarda geçmez. Her istekte tedarikçinin durumu okunur — askıya
+alınan tedarikçinin açık oturumu anında kapanır.
+
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| `GET` | `/supplier/me` | Firma profili, özet sayaçlar, Yanmar'ın paylaştığı mesajlar |
+| `POST` | `/supplier/change-password` | Parola değiştirme |
+| `GET` | `/supplier/documents` | Paylaşılan ve kendi yüklediği belgeler |
+| `POST` | `/supplier/documents` | Belge yükleme (satınalmaya inceleme görevi düşer) |
+| `GET` | `/supplier/documents/:id/download` | Güvenli indirme (yalnızca kendi kayıtları) |
+| `GET` | `/supplier/ncrs` | Firmaya açılan uygunsuzluklar |
+| `POST` | `/supplier/ncrs/:id/respond` | 8D düzeltici faaliyet cevabı |
+| `POST` | `/supplier/ncrs/:id/documents` | Uygunsuzluğa belge ekleme |
+| `GET` | `/supplier/contracts` | Firmayla yapılan sözleşmeler |
+
+Yönetim tarafında: `POST /admin/suppliers/:id/portal-invite` — parola oluşturma
+bağlantısını yeniden gönderir.

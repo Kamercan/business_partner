@@ -22,8 +22,15 @@ declare global {
   }
 }
 
+/**
+ * Personel (Yanmar ekibi) oturum jetonu.
+ *
+ * `typ` alanı jeton türünü ayırır: tedarikçi portalı jetonları `supplier`
+ * taşır ve bu middleware tarafından kesin olarak reddedilir. Böylece
+ * tedarikçi oturumu hiçbir koşulda yönetim uçlarına erişemez.
+ */
 export function signToken(user: { id: number; email: string; role: Role }): string {
-  return jwt.sign({ sub: String(user.id), email: user.email, role: user.role }, config.jwtSecret, {
+  return jwt.sign({ sub: String(user.id), email: user.email, role: user.role, typ: 'staff' }, config.jwtSecret, {
     expiresIn: config.jwtExpiresIn,
   } as jwt.SignOptions);
 }
@@ -45,6 +52,10 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
 
   try {
     const payload = jwt.verify(token, config.jwtSecret) as jwt.JwtPayload;
+
+    // Tedarikçi jetonu yönetim uçlarında asla kabul edilmez.
+    if (payload.typ === 'supplier') return next(forbidden('Bu alan yalnızca Yanmar ekibi içindir.'));
+
     const user = db
       .prepare('SELECT id, email, full_name, role, locale, is_active FROM users WHERE id = ?')
       .get(Number(payload.sub)) as (AuthUser & { is_active: number }) | undefined;

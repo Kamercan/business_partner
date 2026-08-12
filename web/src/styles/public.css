@@ -495,3 +495,38 @@
   .bp-track-form { grid-template-columns: 1fr; }
   .bp-panel { padding: 20px 18px; }
 }
+
+/* Üç seçenekli kapı + tedarikçi portalı */
+.bp-choice-3 { grid-template-columns: repeat(3, 1fr); }
+
+.bp-link-btn {
+  background: none;
+  border: none;
+  color: var(--brand);
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 0;
+  margin-top: 14px;
+  text-decoration: underline;
+}
+.bp-link-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.sp-item { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.sp-item:first-child { padding-top: 0; }
+.sp-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.sp-answer {
+  background: var(--ok-soft);
+  border-left: 3px solid var(--ok);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 14px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  display: grid;
+  gap: 5px;
+}
+
+@media (max-width: 900px) {
+  .bp-choice-3 { grid-template-columns: 1fr; }
+}

@@ -45,7 +45,7 @@ mümkün olduğunu söyler.
 | Denetim planlandı | Başvuru `AUDIT_PLANNED` durumuna senkronize edilir |
 | Puanlama başladı | Başvuru `AUDIT_IN_PROGRESS` durumuna geçer |
 | Denetim tamamlandı | Not hesaplanır, başvuru `AUDIT_DONE` olur, satınalmaya yüksek öncelikli karar görevi düşer |
-| `APPROVED`'a geçiş | Tedarikçi kaydı açılır, ürün grupları taşınır, denetim ilişkilendirilir |
+| `APPROVED`'a geçiş | Tedarikçi kaydı açılır, ürün grupları taşınır, denetim ilişkilendirilir, **tedarikçiye portal daveti gider** (parolasını kendisi belirler) |
 | Bilgi talebi | Tedarikçiye 30 gün geçerli yükleme bağlantısı, moderatöre takip görevi |
 | NCR açıldı | Tedarikçiye 8D cevap bağlantısı, kaliteye takip görevi |
 | Tedarikçi cevap verdi | NCR `SUPPLIER_RESPONDED` olur, kaliteye bildirim gider |

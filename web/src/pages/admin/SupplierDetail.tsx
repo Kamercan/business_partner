@@ -35,6 +35,8 @@ type Supplier = {
   grade: string | null;
   status: string;
   approved_at: string | null;
+  portal_enabled: number;
+  portal_last_login_at: string | null;
   next_audit_due: string | null;
   otd_percent: number | null;
   ppm: number | null;
@@ -160,9 +162,25 @@ export default function SupplierDetail() {
               </Link>
             )}
             {!readOnly && (
-              <button className="btn btn-sm btn-primary" onClick={() => setEditModal(true)} type="button">
-                Bilgileri düzenle
-              </button>
+              <>
+                <button
+                  className="btn btn-sm"
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const r = await api.post<{ message: string }>(`/admin/suppliers/${id}/portal-invite`);
+                      toast.push(r.message, 'ok');
+                    } catch (err) {
+                      toast.push(err instanceof ApiError ? err.message : 'Gönderilemedi.', 'error');
+                    }
+                  }}
+                >
+                  Portal daveti gönder
+                </button>
+                <button className="btn btn-sm btn-primary" onClick={() => setEditModal(true)} type="button">
+                  Bilgileri düzenle
+                </button>
+              </>
             )}
           </>
         }
@@ -347,6 +365,16 @@ export default function SupplierDetail() {
                 <dd>{data.website ?? '—'}</dd>
                 <dt>Onay tarihi</dt>
                 <dd>{formatDate(data.approved_at)}</dd>
+                <dt>Portal erişimi</dt>
+                <dd>
+                  {data.portal_enabled ? (
+                    <span className="badge badge-ok">Etkin</span>
+                  ) : (
+                    <span className="badge badge-neutral">Parola oluşturulmadı</span>
+                  )}
+                </dd>
+                <dt>Son portal girişi</dt>
+                <dd>{formatDate(data.portal_last_login_at, true)}</dd>
               </dl>
             </div>
 

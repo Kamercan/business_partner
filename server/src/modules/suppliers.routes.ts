@@ -3,14 +3,27 @@ import { z } from 'zod';
 import { db } from '../db/index.js';
 import { getActivity, logActivity } from '../lib/activity.js';
 import { buildSimpleWorkbook } from '../lib/excel.js';
-import { ah, notFound, parse } from '../lib/http.js';
+import { ah, badRequest, notFound, parse } from '../lib/http.js';
+import { randomToken, sha256 } from '../lib/ids.js';
+import { notifyPortalInvite } from '../lib/notifications.js';
 import { actorOf, requireAuth, requireRole } from '../middleware/auth.js';
 
 export const supplierRoutes = Router();
 supplierRoutes.use(requireAuth);
 
+/**
+ * Parola özeti hiçbir koşulda API yanıtına çıkmamalıdır. `SELECT s.*`
+ * kullanıldığı için alan burada tek noktadan ayıklanır; yerine
+ * `portal_enabled` bayrağı gönderilir.
+ */
+function stripSecret<T extends Record<string, unknown>>(row: T): T {
+  const { password_hash: _omit, ...rest } = row;
+  return rest as T;
+}
+
 const SELECT = `
   SELECT s.*, a.ref_no,
+         (s.password_hash IS NOT NULL) AS portal_enabled,
          COALESCE((SELECT group_concat(sc.category_code) FROM supplier_categories sc WHERE sc.supplier_id = s.id), '') AS categories,
          (SELECT COUNT(*) FROM ncrs n WHERE n.supplier_id = s.id AND n.status NOT IN ('CLOSED','REJECTED')) AS open_ncrs,
          (SELECT COUNT(*) FROM contracts c WHERE c.supplier_id = s.id AND c.status = 'ACTIVE') AS active_contracts,
@@ -66,9 +79,11 @@ supplierRoutes.get(
     const q = parse(listSchema, req.query);
     const { where, params } = buildWhere(q);
     const total = (db.prepare(`SELECT COUNT(*) c FROM suppliers s ${where}`).get(...params) as { c: number }).c;
-    const rows = db
-      .prepare(`${SELECT} ${where} ORDER BY s.company_name COLLATE NOCASE LIMIT ? OFFSET ?`)
-      .all(...params, q.pageSize, (q.page - 1) * q.pageSize);
+    const rows = (
+      db
+        .prepare(`${SELECT} ${where} ORDER BY s.company_name COLLATE NOCASE LIMIT ? OFFSET ?`)
+        .all(...params, q.pageSize, (q.page - 1) * q.pageSize) as Array<Record<string, unknown>>
+    ).map(stripSecret);
     res.json({ rows, total, page: q.page, pageSize: q.pageSize, pageCount: Math.max(1, Math.ceil(total / q.pageSize)) });
   }),
 );
@@ -78,9 +93,11 @@ supplierRoutes.get(
   ah(async (req, res) => {
     const q = parse(listSchema, req.query);
     const { where, params } = buildWhere(q);
-    const rows = db.prepare(`${SELECT} ${where} ORDER BY s.company_name COLLATE NOCASE LIMIT 10000`).all(...params) as Array<
-      Record<string, unknown>
-    >;
+    const rows = (
+      db.prepare(`${SELECT} ${where} ORDER BY s.company_name COLLATE NOCASE LIMIT 10000`).all(...params) as Array<
+        Record<string, unknown>
+      >
+    ).map(stripSecret);
     const catNames = Object.fromEntries(
       (db.prepare('SELECT code, name_tr FROM categories').all() as Array<{ code: string; name_tr: string }>).map((c) => [
         c.code,
@@ -136,8 +153,9 @@ supplierRoutes.get(
   '/:id',
   ah((req, res) => {
     const id = Number(req.params.id);
-    const supplier = db.prepare(`${SELECT} WHERE s.id = ?`).get(id) as Record<string, unknown> | undefined;
-    if (!supplier) throw notFound('Tedarikçi bulunamadı.');
+    const found = db.prepare(`${SELECT} WHERE s.id = ?`).get(id) as Record<string, unknown> | undefined;
+    if (!found) throw notFound('Tedarikçi bulunamadı.');
+    const supplier = stripSecret(found);
 
     const contracts = db.prepare('SELECT * FROM contracts WHERE supplier_id = ? ORDER BY end_date DESC').all(id);
     const ncrs = db.prepare('SELECT * FROM ncrs WHERE supplier_id = ? ORDER BY id DESC').all(id);
@@ -233,7 +251,7 @@ supplierRoutes.patch(
       });
     }
 
-    res.json(db.prepare(`${SELECT} WHERE s.id = ?`).get(id));
+    res.json(stripSecret(db.prepare(`${SELECT} WHERE s.id = ?`).get(id) as Record<string, unknown>));
   }),
 );
 
@@ -248,5 +266,40 @@ supplierRoutes.post(
       .prepare(`INSERT INTO notes (entity_type, entity_id, author_id, body) VALUES ('SUPPLIER', ?, ?, ?)`)
       .run(id, req.user!.id, body.body);
     res.status(201).json({ id: created.lastInsertRowid });
+  }),
+);
+
+/**
+ * Tedarikçiye portal davetini (parola oluşturma bağlantısı) yeniden gönderir.
+ * Tedarikçi e-postayı kaybettiğinde veya adresi değiştiğinde kullanılır.
+ */
+supplierRoutes.post(
+  '/:id/portal-invite',
+  requireRole('MODERATOR', 'QUALITY'),
+  ah(async (req, res) => {
+    const id = Number(req.params.id);
+    const supplier = db.prepare('SELECT id, company_name, email, status FROM suppliers WHERE id = ?').get(id) as
+      | { id: number; company_name: string; email: string; status: string }
+      | undefined;
+    if (!supplier) throw notFound('Tedarikçi bulunamadı.');
+    if (!['APPROVED', 'CONDITIONAL'].includes(supplier.status)) {
+      throw badRequest('Yalnızca onaylı tedarikçilere portal erişimi verilebilir.');
+    }
+
+    const token = randomToken();
+    db.prepare(
+      `INSERT INTO portal_tokens (token_hash, purpose, entity_type, entity_id, email, expires_at)
+       VALUES (?, 'SET_PASSWORD', 'SUPPLIER', ?, ?, datetime('now','+14 days'))`,
+    ).run(sha256(token), supplier.id, supplier.email);
+
+    await notifyPortalInvite(supplier, token);
+    logActivity({
+      entityType: 'SUPPLIER',
+      entityId: id,
+      action: 'PORTAL_INVITE_SENT',
+      actor: actorOf(req),
+      detail: supplier.email,
+    });
+    res.json({ ok: true, message: 'Portal daveti tedarikçiye gönderildi.' });
   }),
 );

@@ -183,6 +183,49 @@ export async function notifyAuditAssigned(audit: {
   });
 }
 
+/**
+ * Onay sonrası tedarikçi portalı daveti — tedarikçi parolasını kendisi belirler.
+ * `isReset` true ise parola sıfırlama metni kullanılır.
+ */
+export async function notifyPortalInvite(
+  supplier: { id: number; company_name: string; email: string },
+  token: string,
+  isReset = false,
+): Promise<void> {
+  const url = `${config.publicBaseUrl}/tedarikci/parola/${token}`;
+  await sendMail({
+    to: supplier.email,
+    subject: isReset
+      ? 'Tedarikçi portalı — parola yenileme'
+      : 'Tedarikçi portalı erişiminiz hazır',
+    template: isReset ? 'PORTAL_RESET' : 'PORTAL_INVITE',
+    entityType: 'SUPPLIER',
+    entityId: supplier.id,
+    html: layout(
+      isReset ? 'Parolanızı yenileyin' : 'Tedarikçi portalı erişiminiz hazır',
+      `<p style="font-size:14px;line-height:1.6;">Sayın yetkili (${escapeHtml(supplier.company_name)}),</p>
+       <p style="font-size:14px;line-height:1.6;">
+         ${
+           isReset
+             ? 'Tedarikçi portalı parolanızı yenilemek için aşağıdaki bağlantıyı kullanabilirsiniz.'
+             : 'Firmanız Yanmar Türkiye onaylı tedarikçi havuzuna eklenmiştir. Tedarikçi portalına erişmek için aşağıdaki bağlantıdan <strong>kendi parolanızı belirleyin</strong>.'
+         }
+       </p>
+       ${keyValueTable([['Giriş e-postası', supplier.email]])}
+       <p style="font-size:13px;line-height:1.6;color:#555;">
+         Portal üzerinden belge yükleyebilir, uygunsuzluk raporlarına düzeltici faaliyet cevabı
+         girebilir ve sözleşmelerinizi görüntüleyebilirsiniz.
+       </p>
+       ${button(url, isReset ? 'Parolamı yenile' : 'Parolamı oluştur')}
+       <p style="font-size:12px;color:#888;line-height:1.6;">
+         Bu bağlantı ${isReset ? '3 gün' : '14 gün'} geçerlidir ve yalnızca bir kez kullanılabilir.
+         Parolanızı oluşturduktan sonra portala
+         <a href="${config.publicBaseUrl}/business-partner?giris=tedarikci" style="color:#E60012;">buradan</a> girebilirsiniz.
+       </p>`,
+    ),
+  });
+}
+
 /** Faz 4 — Tedarikçiye uygunsuzluk raporu bildirimi. */
 export async function notifyNcrOpened(
   ncr: { id: number; ncr_no: string; title: string; severity: string; due_date: string | null; description: string },

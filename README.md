@@ -5,8 +5,9 @@ B2B tedarikçi başvuru ve yaşam döngüsü yönetim portalı.
 Tedarikçi başvurularını **tek bir kapıdan** toplar, ürün grubuna göre **filtrelenebilir**
 hale getirir, **Excel'e aktarır** ve kalite onay süreçlerini uçtan uca **dijitalleştirir**.
 
-Sitedeki **Business Partner** butonu tek bir ekrana açılır: tedarikçi buradan başvurusunu
-yapar veya başvurusunu takip eder, Yanmar ekibi ise yönetim paneline giriş yapar.
+Sitedeki **Business Partner** butonu tek bir ekrana açılır. Üç yol vardır:
+başvuru yapmak / başvuru takibi, **onaylı tedarikçi girişi** (parolayla) ve
+Yanmar ekibinin yönetim paneli girişi.
 
 > Projenin çıkış noktası: *"Bu büyük veri havuzunda aradığımızı bulamıyoruz; örneğin, sadece
 > hidrolikçileri filtreleyip göremiyorum."* — Portal bunu tek tıkla çözer ve süreci
@@ -58,7 +59,9 @@ ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 | Adres | Açıklama |
 |---|---|
 | `/` | Kurumsal tanıtım sayfası |
-| `/business-partner` | **Tek giriş kapısı** — başvuru, başvuru takibi ve ekip girişi |
+| `/business-partner` | **Tek giriş kapısı** — başvuru, takip, tedarikçi girişi, ekip girişi |
+| `/tedarikci` | Onaylı tedarikçi portalı (parolayla giriş) |
+| `/tedarikci/parola/:token` | Tedarikçinin parolasını belirlediği ekran |
 | `/portal/:token` | Tedarikçi self-servis alanı (hesapsız, süreli bağlantı) |
 | `/yonetim` | Yönetim paneli (giriş sonrası) |
 
@@ -104,6 +107,10 @@ ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 - **Uygunsuzluk raporları (NCR)** 8D akışıyla: açma → tedarikçi cevabı → inceleme → kapatma
   (kök neden ve düzeltici faaliyet girilmeden kapatılamaz)
 - **Karşılıklı güvenli dosya paylaşımı**: belge bazlı görünürlük (dahili / tedarikçiyle paylaşılan)
+- **Onaylı tedarikçi portalı**: tedarikçi parolasını onay e-postasındaki bağlantıdan kendisi
+  belirler; sonrasında e-posta + parola ile girip belge yükler, uygunsuzluklara 8D cevabı verir
+  ve sözleşmelerini görür. Yalnızca onaylı/şartlı onaylı tedarikçiler girebilir; askıya alınan
+  tedarikçinin açık oturumu da anında kapanır
 - Tedarikçi performans göstergeleri (OTD, PPM), periyodik denetim takibi
 
 ---

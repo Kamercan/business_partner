@@ -17,6 +17,7 @@ import { metaRoutes } from './modules/meta.routes.js';
 import { ncrRoutes } from './modules/ncrs.routes.js';
 import { portalRoutes } from './modules/portal.routes.js';
 import { statsRoutes } from './modules/stats.routes.js';
+import { supplierRoutes as supplierPortalRoutes } from './modules/supplier.routes.js';
 import { supplierRoutes } from './modules/suppliers.routes.js';
 import { taskRoutes } from './modules/tasks.routes.js';
 import { userRoutes } from './modules/users.routes.js';
@@ -61,6 +62,7 @@ export function createApp(): express.Express {
   app.use('/api/meta', metaRoutes);
   app.use('/api/applications', publicApplications);
   app.use('/api/portal', portalRoutes);
+  app.use('/api/supplier', supplierPortalRoutes);
   app.use('/api/auth', authRoutes);
 
   // --- Yetkili uçlar ---
