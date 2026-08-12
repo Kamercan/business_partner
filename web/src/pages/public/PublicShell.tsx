@@ -36,7 +36,6 @@ export function PublicHeader({ onApply }: { onApply?: () => void }) {
         <a href="#urunler">{t('nav.products')}</a>
         <a href="#destek">{t('nav.support')}</a>
         <a href="#hakkimizda">{t('nav.about')}</a>
-        <Link to="/basvuru-takip">{t('nav.track')}</Link>
       </nav>
       <div className="header-right">
         <LangToggle />
@@ -48,7 +47,7 @@ export function PublicHeader({ onApply }: { onApply?: () => void }) {
             {t('nav.bp')}
           </button>
         ) : (
-          <Link to="/basvuru" className="bp-btn">
+          <Link to="/business-partner" className="bp-btn">
             {t('nav.bp')}
           </Link>
         )}

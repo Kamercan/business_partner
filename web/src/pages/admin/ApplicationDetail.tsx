@@ -10,7 +10,6 @@ import {
   AUDIT_STATUS,
   DOCUMENT_KIND,
   PRIORITY,
-  SOURCE,
   formatBytes,
   formatDate,
   label,
@@ -44,7 +43,6 @@ type Detail = {
   consent_version: string | null;
   consent_at: string | null;
   status: string;
-  source: string;
   priority: string;
   completeness: number;
   duplicate_of: number | null;
@@ -206,7 +204,7 @@ export default function ApplicationDetail() {
     <>
       <TopBar
         title={data.company_name}
-        subtitle={`${data.ref_no} · ${formatDate(data.created_at, true)} tarihinde ${label(SOURCE, data.source)} üzerinden alındı`}
+        subtitle={`${data.ref_no} · ${formatDate(data.created_at, true)}`}
         actions={
           <>
             <Link className="btn btn-sm" to="/yonetim/basvurular">

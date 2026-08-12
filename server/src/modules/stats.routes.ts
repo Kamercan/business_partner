@@ -36,10 +36,6 @@ statsRoutes.get(
       )
       .all();
 
-    const bySource = db
-      .prepare('SELECT source, COUNT(*) AS count FROM applications GROUP BY source ORDER BY count DESC')
-      .all();
-
     const byCountry = db
       .prepare('SELECT country, COUNT(*) AS count FROM applications GROUP BY country ORDER BY count DESC LIMIT 10')
       .all();
@@ -117,7 +113,6 @@ statsRoutes.get(
       totals,
       byStatus,
       byCategory,
-      bySource,
       byCountry,
       monthly,
       grades,

@@ -7,19 +7,11 @@ import { ROLE, label } from '../../lib/labels';
 type Counts = { tasks: number; audits: number; ncrs: number; applications: number };
 
 const NAV = [
-  { group: 'Genel' },
   { to: '/yonetim', end: true, label: 'Panom', key: null },
   { to: '/yonetim/gorevler', label: 'İş Sıram', key: 'tasks' as const },
-
-  { group: 'Faz 1–2 · Başvurular' },
-  { to: '/yonetim/basvurular', label: 'Başvuru Havuzu', key: 'applications' as const },
-  { to: '/yonetim/ice-aktar', label: 'Liste İçe Aktar', key: null, roles: ['MODERATOR'] },
-
-  { group: 'Faz 3 · Kalite' },
+  { to: '/yonetim/basvurular', label: 'Başvurular', key: 'applications' as const },
   { to: '/yonetim/denetimler', label: 'Denetimler', key: 'audits' as const },
-
-  { group: 'Faz 4 · Tedarikçi İlişkileri' },
-  { to: '/yonetim/tedarikciler', label: 'Onaylı Tedarikçiler', key: null },
+  { to: '/yonetim/tedarikciler', label: 'Tedarikçiler', key: null },
   { to: '/yonetim/sozlesmeler', label: 'Sözleşmeler', key: null },
   { to: '/yonetim/uygunsuzluklar', label: 'Uygunsuzluklar', key: 'ncrs' as const },
 

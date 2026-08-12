@@ -4,14 +4,13 @@ import { api } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
 import { BarChart, Badge, Loading, TrendChart } from '../../components/ui';
 import { useI18n } from '../../i18n';
-import { APPLICATION_STATUS, SOURCE, formatDate, label, relativeDays, tone } from '../../lib/labels';
+import { APPLICATION_STATUS, formatDate, label, tone } from '../../lib/labels';
 import { TopBar } from './AdminLayout';
 
 type Stats = {
   totals: { total: number; last30: number; last7: number };
   byStatus: Array<{ status: string; count: number }>;
   byCategory: Array<{ code: string; name_tr: string; name_en: string; count: number; approved: number }>;
-  bySource: Array<{ source: string; count: number }>;
   byCountry: Array<{ country: string; count: number }>;
   monthly: Array<{ month: string; count: number; approved: number }>;
   grades: Array<{ grade: string; count: number }>;
@@ -149,14 +148,7 @@ export default function Dashboard() {
           </div>
 
           <div className="card">
-            <div className="card-title">Başvuru kanalları</div>
-            <BarChart
-              data={stats.bySource.map((s) => ({ label: label(SOURCE, s.source), value: s.count }))}
-              color="#4a5d6b"
-            />
-            <div className="card-title" style={{ marginTop: 20 }}>
-              Kalite notu dağılımı
-            </div>
+            <div className="card-title">Kalite notu dağılımı</div>
             <div className="row wrap" style={{ gap: 10 }}>
               {['A', 'B', 'C', 'D'].map((g) => (
                 <div key={g} className="row" style={{ gap: 6 }}>

@@ -74,18 +74,6 @@ export const CONTRACT_TYPE: Record<string, LabelDef> = {
   OTHER: { tr: 'Diğer', en: 'Other', tone: 'neutral' },
 };
 
-export const SOURCE: Record<string, LabelDef> = {
-  WEB_FORM: { tr: 'Web formu', en: 'Web form', tone: 'neutral' },
-  EMAIL: { tr: 'E-posta', en: 'Email', tone: 'neutral' },
-  LINKEDIN: { tr: 'LinkedIn', en: 'LinkedIn', tone: 'neutral' },
-  EYDEP: { tr: 'EYDEP', en: 'EYDEP', tone: 'neutral' },
-  TURKISHEXPORTER: { tr: 'TurkishExporter', en: 'TurkishExporter', tone: 'neutral' },
-  FAIR: { tr: 'Fuar', en: 'Trade fair', tone: 'neutral' },
-  REFERRAL: { tr: 'Referans', en: 'Referral', tone: 'neutral' },
-  IMPORT: { tr: 'İçe aktarım', en: 'Import', tone: 'neutral' },
-  OTHER: { tr: 'Diğer', en: 'Other', tone: 'neutral' },
-};
-
 export const ROLE: Record<string, LabelDef> = {
   ADMIN: { tr: 'Yönetici', en: 'Administrator', tone: 'danger' },
   MODERATOR: { tr: 'Satınalma / Moderatör', en: 'Procurement / Moderator', tone: 'info' },

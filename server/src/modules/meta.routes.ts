@@ -3,13 +3,7 @@ import { z } from 'zod';
 import { config } from '../config.js';
 import { db, getSetting, setSetting } from '../db/index.js';
 import { logActivity } from '../lib/activity.js';
-import {
-  APPLICATION_SOURCES,
-  APPLICATION_STATUSES,
-  COUNTRIES,
-  EMPLOYEE_BANDS,
-  REVENUE_BANDS,
-} from '../lib/constants.js';
+import { APPLICATION_STATUSES, COUNTRIES, EMPLOYEE_BANDS, REVENUE_BANDS } from '../lib/constants.js';
 import { ah, notFound, parse } from '../lib/http.js';
 import { actorOf, requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -40,7 +34,6 @@ metaRoutes.get(
       employeeBands: EMPLOYEE_BANDS,
       revenueBands: REVENUE_BANDS,
       statuses: APPLICATION_STATUSES,
-      sources: APPLICATION_SOURCES,
       org: { name: getSetting('org.name', 'Yanmar Türkiye Makine Sanayi A.Ş.'), short: getSetting('org.short', 'Yanmar Türkiye') },
       /** Demo modunda giriş ekranı örnek hesapları gösterir. */
       demoMode: config.demoMode,

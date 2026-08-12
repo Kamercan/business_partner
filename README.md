@@ -2,9 +2,11 @@
 
 B2B tedarikçi başvuru ve yaşam döngüsü yönetim portalı.
 
-Farklı kanallardan (web formu, e-posta, LinkedIn, EYDEP, TurkishExporter) gelen tedarikçi
-başvurularını **tek merkezde toplar**, ürün grubuna göre **filtrelenebilir** hale getirir,
-**Excel'e aktarır** ve kalite onay süreçlerini uçtan uca **dijitalleştirir**.
+Tedarikçi başvurularını **tek bir kapıdan** toplar, ürün grubuna göre **filtrelenebilir**
+hale getirir, **Excel'e aktarır** ve kalite onay süreçlerini uçtan uca **dijitalleştirir**.
+
+Sitedeki **Business Partner** butonu tek bir ekrana açılır: tedarikçi buradan başvurusunu
+yapar veya başvurusunu takip eder, Yanmar ekibi ise yönetim paneline giriş yapar.
 
 > Projenin çıkış noktası: *"Bu büyük veri havuzunda aradığımızı bulamıyoruz; örneğin, sadece
 > hidrolikçileri filtreleyip göremiyorum."* — Portal bunu tek tıkla çözer ve süreci
@@ -55,10 +57,10 @@ ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 
 | Adres | Açıklama |
 |---|---|
-| `/` | Kurumsal tanıtım sayfası + **Business Partner** başvuru formu |
-| `/basvuru-takip` | Tedarikçinin referans no + e-posta ile durum sorgulaması |
+| `/` | Kurumsal tanıtım sayfası |
+| `/business-partner` | **Tek giriş kapısı** — başvuru, başvuru takibi ve ekip girişi |
 | `/portal/:token` | Tedarikçi self-servis alanı (hesapsız, süreli bağlantı) |
-| `/yonetim` | Yönetim paneli |
+| `/yonetim` | Yönetim paneli (giriş sonrası) |
 
 ---
 
@@ -66,7 +68,7 @@ ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 
 ### Faz 1 — Başvuru formu ve temel veritabanı ✅
 
-- Kurumsal siteye eklenen **Business Partner** butonu ve tek adımlı başvuru formu
+- Kurumsal siteye eklenen **Business Partner** butonu → tedarikçi ve ekip için tek giriş ekranı
 - Firma bilgileri, iletişim, **çoklu ürün grubu seçimi** (açıklama baloncuklarıyla),
   kalite sertifikaları, referanslar ve firma tanıtımı
 - **Gerçek dosya yükleme**: şirket sunumu, ürün kataloğu, ISO 9001, diğer sertifikalar, mali tablo
@@ -77,7 +79,7 @@ ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 ### Faz 2 — Moderatör yönetim paneli ✅
 
 - Başvuruların **tablo (grid)** görünümü; sayfalama ve sıralama
-- **Ürün grubu, sertifika, durum, ülke, kaynak ve serbest metin** ile filtreleme
+- **Ürün grubu, sertifika, durum, ülke ve serbest metin** ile filtreleme
   (filtreler URL'e yazılır — görünüm paylaşılabilir ve yer imlenebilir)
 - **Excel'e aktarım**: ekrandaki filtrenin birebir aynısı, Türkçe etiketlerle;
   ürün grubu özeti ve hangi filtrelerle alındığını gösteren rapor bilgisi sayfası ile
@@ -112,8 +114,7 @@ Bunlar görüşmede istenmedi ancak sistemin gerçekten kullanılabilir olması 
 
 | Özellik | Neden |
 |---|---|
-| **Mükerrer başvuru tespiti** | Aynı firma birden çok kanaldan başvuruyor. Firma adı ticaret unvanı eklerinden arındırılarak (`ABC Metal San. Tic. Ltd. Şti.` ≡ `ABC METAL SANAYI TICARET LIMITED`), vergi no ve e-posta ile eşleştirilir; kayıt işaretlenir. |
-| **CSV içe aktarım** | EYDEP / TurkishExporter / fuar listeleri aynı havuza aktarılır. Türkçe sütun başlıkları otomatik tanınır, önizleme ve mükerrer ayıklama yapılır. |
+| **Mükerrer başvuru tespiti** | Aynı firma birden çok kez başvurabiliyor. Firma adı ticaret unvanı eklerinden arındırılarak (`ABC Metal San. Tic. Ltd. Şti.` ≡ `ABC METAL SANAYI TICARET LIMITED`), vergi no ve e-posta ile eşleştirilir; kayıt işaretlenir. |
 | **Başvuru takip sayfası** | Tedarikçi "başvurum ne oldu?" diye telefon etmez; referans no + e-posta ile kendi durumunu görür. Satınalmanın üzerindeki soru yükünü azaltır. |
 | **Tedarikçi self-servis bağlantısı** | Faz 4'ün dosya alışverişi ve NCR cevapları için tedarikçiye hesap açmadan (görüşmedeki "tedarikçinin panele ihtiyacı yok" kuralını bozmadan) süreli, tek varlığa kapsamlı imzalı bağlantı verilir. |
 | **İş sırası (görev kuyruğu)** | Faz 3'teki "kalite ekranına task düşmeli" ihtiyacının genelleştirilmiş hâli: her birim kendi kuyruğunu, terminleri ve gecikmeleri görür. |

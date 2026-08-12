@@ -5,7 +5,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Badge, EmptyState, Grade, Loading, Pagination, useToast } from '../../components/ui';
 import { useI18n } from '../../i18n';
 import { categoryNames, useMeta } from '../../hooks/useMeta';
-import { APPLICATION_STATUS, SOURCE, formatDate, label, relativeDays, tone } from '../../lib/labels';
+import { APPLICATION_STATUS, formatDate, label, relativeDays, tone } from '../../lib/labels';
 import { TopBar } from './AdminLayout';
 
 type Row = {
@@ -20,7 +20,6 @@ type Row = {
   email: string;
   phone: string;
   status: string;
-  source: string;
   completeness: number;
   duplicate_of: number | null;
   assignee_name: string | null;
@@ -142,7 +141,6 @@ export default function Applications() {
     activeFilters.push({ key: `status:${s}`, text: label(APPLICATION_STATUS, s) }),
   );
   if (params.get('country')) activeFilters.push({ key: 'country', text: `Ülke: ${params.get('country')!.toUpperCase()}` });
-  if (params.get('source')) activeFilters.push({ key: 'source', text: `Kaynak: ${label(SOURCE, params.get('source')!)}` });
 
   const removeFilter = (key: string) => {
     if (key.includes(':')) {
@@ -161,14 +159,9 @@ export default function Applications() {
         subtitle="Tüm kanallardan gelen tedarikçi başvuruları"
         actions={
           <>
-            <button className="btn" onClick={exportExcel} disabled={exporting} type="button">
-              {exporting ? <span className="spinner" /> : '⤓'} Excel'e aktar
-            </button>
-            {can('MODERATOR') && (
-              <Link className="btn" to="/yonetim/ice-aktar">
-                Liste içe aktar
-              </Link>
-            )}
+          <button className="btn" onClick={exportExcel} disabled={exporting} type="button">
+            {exporting ? <span className="spinner" /> : '⤓'} Excel'e aktar
+          </button>
           </>
         }
       />
@@ -192,17 +185,6 @@ export default function Applications() {
                 {meta?.countries.map((c) => (
                   <option key={c.code} value={c.code}>
                     {lang === 'tr' ? c.tr : c.en}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Kaynak</label>
-              <select value={params.get('source') ?? ''} onChange={(e) => update({ source: e.target.value || undefined })}>
-                <option value="">Tümü</option>
-                {meta?.sources.map((s) => (
-                  <option key={s} value={s}>
-                    {label(SOURCE, s)}
                   </option>
                 ))}
               </select>
@@ -359,7 +341,6 @@ export default function Applications() {
                       <th>Durum</th>
                       <th>Not</th>
                       <th>Doluluk</th>
-                      <th>Kaynak</th>
                       <th>Tarih</th>
                     </tr>
                   </thead>
@@ -434,7 +415,6 @@ export default function Applications() {
                           </div>
                           <div className="small muted">{row.document_count} belge</div>
                         </td>
-                        <td className="tight small">{label(SOURCE, row.source)}</td>
                         <td className="tight small">
                           {formatDate(row.created_at)}
                           <div className="muted">{relativeDays(row.created_at)}</div>

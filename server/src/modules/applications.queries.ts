@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { db } from '../db/index.js';
-import { APPLICATION_SOURCES, APPLICATION_STATUSES } from '../lib/constants.js';
+import { APPLICATION_STATUSES } from '../lib/constants.js';
 
 /** Virgülle ayrılmış query parametrelerini diziye çevirir. */
 const csv = z
@@ -19,7 +19,6 @@ export const listQuerySchema = z.object({
   cert: csv,
   country: csv,
   sector: csv,
-  source: csv,
   assignedTo: z.coerce.number().int().positive().optional(),
   unassigned: z.coerce.boolean().optional(),
   minCompleteness: z.coerce.number().min(0).max(100).optional(),
@@ -66,7 +65,6 @@ export function buildWhere(q: ListQuery): Built {
   };
 
   inClause('a.status', q.status, APPLICATION_STATUSES);
-  inClause('a.source', q.source, APPLICATION_SOURCES);
   inClause('a.country', q.country);
   inClause('a.sector', q.sector);
 
@@ -142,7 +140,6 @@ export type ApplicationRow = {
   revenue_band: string | null;
   founded_year: number | null;
   status: string;
-  source: string;
   priority: string;
   completeness: number;
   duplicate_of: number | null;
@@ -159,7 +156,7 @@ export type ApplicationRow = {
 const BASE_SELECT = `
   SELECT a.id, a.ref_no, a.company_name, a.tax_id, a.sector, a.country, a.city,
          a.contact_name, a.email, a.phone, a.website, a.employee_band, a.revenue_band, a.founded_year,
-         a.status, a.source, a.priority, a.completeness, a.duplicate_of, a.assigned_to,
+         a.status, a.priority, a.completeness, a.duplicate_of, a.assigned_to,
          u.full_name AS assignee_name, a.created_at, a.updated_at,
          COALESCE((SELECT group_concat(ac.category_code) FROM application_categories ac WHERE ac.application_id = a.id), '') AS categories,
          COALESCE((SELECT group_concat(ct.cert_code) FROM application_certifications ct WHERE ct.application_id = a.id), '') AS certifications,

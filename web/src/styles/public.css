@@ -414,3 +414,84 @@
   .upload-grid { grid-template-columns: 1fr; }
   .site-footer { padding: 20px; }
 }
+
+/* ==========================================================================
+   Business Partner tek giriş kapısı
+   ========================================================================== */
+
+.bp-gate { min-height: 100vh; background: var(--bg-2); display: flex; flex-direction: column; }
+
+.bp-gate-top {
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bp-gate-body { max-width: 760px; width: 100%; margin: 0 auto; padding: 44px 20px 72px; }
+.bp-gate-body h1 { font-size: 27px; margin-bottom: 8px; }
+.bp-gate-lead { color: var(--ink-3); font-size: 15px; margin-bottom: 28px; }
+
+.bp-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+.bp-choice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bp-choice-card:hover { border-color: var(--brand); }
+.bp-choice-card.on {
+  border-color: var(--brand);
+  border-width: 2px;
+  padding: 17px 19px;
+  box-shadow: 0 2px 10px rgba(230, 0, 18, 0.1);
+}
+.bp-choice-title { font-size: 16px; font-weight: 700; }
+.bp-choice-sub { font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+
+.bp-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+}
+
+.bp-action { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.bp-action.bp-action-col { display: block; }
+.bp-action h2 { font-size: 17px; margin-bottom: 5px; }
+.bp-action p { font-size: 13.5px; color: var(--ink-3); line-height: 1.6; max-width: 460px; }
+.bp-action .btn { flex-shrink: 0; }
+
+.bp-sep {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--ink-4);
+  font-size: 12px;
+  margin: 24px 0;
+}
+.bp-sep::before, .bp-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+.bp-track-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-top: 14px; }
+.bp-track-result { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+
+.bp-login h2 { font-size: 17px; margin-bottom: 5px; }
+.bp-login p { font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+.bp-login .demo-accounts { margin-top: 20px; }
+
+@media (max-width: 720px) {
+  .bp-gate-top { padding: 12px 16px; }
+  .bp-choice { grid-template-columns: 1fr; }
+  .bp-action { display: block; }
+  .bp-action .btn { margin-top: 14px; }
+  .bp-track-form { grid-template-columns: 1fr; }
+  .bp-panel { padding: 20px 18px; }
+}

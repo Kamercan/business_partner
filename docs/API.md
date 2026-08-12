@@ -48,7 +48,7 @@ Aynı firma 24 saat içinde tekrar başvurursa `409 CONFLICT`.
 | `GET` | `/` | tümü | Filtreli liste |
 | `GET` | `/export` | tümü | Excel (aynı filtreler) |
 | `GET` | `/:id` | tümü | Detay + belgeler, denetimler, notlar, izin verilen geçişler |
-| `PATCH` | `/:id` | MOD/QUA | Sorumlu, öncelik, kaynak, karar notu |
+| `PATCH` | `/:id` | MOD/QUA | Sorumlu, öncelik, karar notu |
 | `POST` | `/:id/status` | MOD/QUA | Durum geçişi (iş akışını tetikler) |
 | `POST` | `/bulk-status` | MOD | Toplu durum değişikliği (en fazla 200) |
 | `POST` | `/:id/request-info` | MOD/QUA | Süreli bağlantıyla bilgi/belge talebi |
@@ -64,7 +64,7 @@ Aynı firma 24 saat içinde tekrar başvurursa `409 CONFLICT`.
 | `categoryMode` | `any` \| `all` | Herhangi biri / hepsi birden |
 | `cert` | `iso9001,iatf` | Seçilen **tüm** sertifikalara sahip olanlar |
 | `status` | `NEW,IN_REVIEW` | Durum |
-| `country` / `sector` / `source` | `tr` | Çoklu değer virgülle |
+| `country` / `sector` | `tr` | Çoklu değer virgülle |
 | `assignedTo` / `unassigned` | `3` / `true` | Sorumlu |
 | `minCompleteness` | `60` | Doluluk skoru alt sınırı |
 | `duplicatesOnly` | `true` | Yalnızca mükerrer işaretliler |
@@ -131,8 +131,6 @@ Tüm maddeler puanlanmadan tamamlanamaz.
 | `GET` | `/admin/stats/dashboard` | tümü | Pano göstergeleri |
 | `GET` | `/admin/stats/outbox` | tümü | E-posta kutusu |
 | `GET` | `/admin/stats/activity` | tümü | Sistem geneli denetim izi |
-| `POST` | `/admin/imports/applications` | MOD | CSV içe aktarım (`dry_run=true` önizleme) |
-| `GET` | `/admin/imports/template` | MOD | Örnek CSV şablonu |
 | `GET` | `/admin/users` | tümü | Atama listesi |
 | `GET` | `/admin/users/all` | ADMIN | Tüm kullanıcılar |
 | `POST` | `/admin/users` | ADMIN | Kullanıcı oluşturma |

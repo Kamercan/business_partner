@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { CONSENT_VERSION } from '../config.js';
 import { db, tx } from '../db/index.js';
 import { getActivity, logActivity } from '../lib/activity.js';
-import { APPLICATION_SOURCES, STATUS_TRANSITIONS, type ApplicationStatus } from '../lib/constants.js';
+import { STATUS_TRANSITIONS, type ApplicationStatus } from '../lib/constants.js';
 import { buildApplicationsWorkbook } from '../lib/excel.js';
 import { ah, badRequest, conflict, forbidden, notFound, parse } from '../lib/http.js';
 import { nextAuditNo, nextRefNo, nextSupplierCode, randomToken, sha256 } from '../lib/ids.js';
@@ -286,7 +286,6 @@ function filterSummary(q: Record<string, unknown>): string {
     cert: 'Sertifika',
     country: 'Ülke',
     sector: 'Sektör',
-    source: 'Kaynak',
     dateFrom: 'Başlangıç',
     dateTo: 'Bitiş',
     minCompleteness: 'Min. doluluk',
@@ -416,7 +415,6 @@ adminApplications.get(
 const patchSchema = z.object({
   assigned_to: z.number().int().positive().nullable().optional(),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH']).optional(),
-  source: z.enum(APPLICATION_SOURCES).optional(),
   decision_note: z.string().max(2000).nullable().optional(),
 });
 

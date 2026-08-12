@@ -29,18 +29,6 @@ const STATUS_TR: Dict = {
   DISQUALIFIED: 'Elendi',
 };
 
-const SOURCE_TR: Dict = {
-  WEB_FORM: 'Web formu',
-  EMAIL: 'E-posta',
-  LINKEDIN: 'LinkedIn',
-  EYDEP: 'EYDEP',
-  TURKISHEXPORTER: 'TurkishExporter',
-  FAIR: 'Fuar',
-  REFERRAL: 'Referans',
-  IMPORT: 'İçe aktarım',
-  OTHER: 'Diğer',
-};
-
 function styleHeader(sheet: ExcelJS.Worksheet): void {
   const header = sheet.getRow(1);
   header.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
@@ -91,7 +79,6 @@ export async function buildApplicationsWorkbook(
     { header: 'Çalışan Sayısı', key: 'employee_band', width: 14 },
     { header: 'Yıllık Ciro (€)', key: 'revenue_band', width: 14 },
     { header: 'Kuruluş Yılı', key: 'founded_year', width: 12 },
-    { header: 'Kaynak', key: 'source', width: 16 },
     { header: 'Doluluk %', key: 'completeness', width: 11 },
     { header: 'Belge Sayısı', key: 'document_count', width: 12 },
     { header: 'Sorumlu', key: 'assignee_name', width: 22 },
@@ -125,7 +112,6 @@ export async function buildApplicationsWorkbook(
       employee_band: r.employee_band ?? '',
       revenue_band: r.revenue_band ?? '',
       founded_year: r.founded_year ?? '',
-      source: SOURCE_TR[r.source] ?? r.source,
       completeness: r.completeness,
       document_count: r.document_count,
       assignee_name: r.assignee_name ?? '',

@@ -5,7 +5,7 @@
 ```
                  [Tedarikçi]                     [Satınalma / Moderatör]        [Kalite Birimi]
                       │
-   web formu / e-posta / LinkedIn / EYDEP / CSV
+        Business Partner başvuru formu
                       │
                       ▼
                     NEW ──────────────────────────► havuzda listelenir, görev düşer
@@ -69,7 +69,6 @@ mümkün olduğunu söyler.
 | NCR açma / kapatma | ✓ | ✓ | ✓ | — |
 | Belge yükleme / paylaşma | ✓ | ✓ | ✓ | — |
 | Belge silme | ✓ | — | — | — |
-| CSV içe aktarım | ✓ | ✓ | — | — |
 | Kullanıcı ve taksonomi yönetimi | ✓ | — | — | — |
 | Başvuru kalıcı silme (KVKK) | ✓ | — | — | — |
 

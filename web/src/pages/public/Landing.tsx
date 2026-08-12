@@ -1,25 +1,14 @@
-import { useEffect, useState } from 'react';
-import { api } from '../../api/client';
-import { useToast } from '../../components/ui';
+import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
-import ApplicationForm, { type Meta } from './ApplicationForm';
 import { PublicShell } from './PublicShell';
 
-export default function Landing({ openForm = false }: { openForm?: boolean }) {
+export default function Landing() {
   const { t } = useI18n();
-  const toast = useToast();
-  const [meta, setMeta] = useState<Meta | null>(null);
-  const [open, setOpen] = useState(openForm);
-
-  useEffect(() => {
-    api
-      .get<Meta>('/meta')
-      .then(setMeta)
-      .catch(() => toast.push('Form verileri yüklenemedi. Sayfayı yenileyin.', 'error'));
-  }, [toast]);
+  const navigate = useNavigate();
+  const goToGate = () => navigate('/business-partner');
 
   return (
-    <PublicShell onApply={() => setOpen(true)}>
+    <PublicShell onApply={goToGate}>
       <div className="demo-banner">
         <strong>Business Partner</strong> · Yanmar Türkiye tedarikçi başvuru ve değerlendirme portalı — başvurmak için sağ
         üstteki butonu kullanın.
@@ -51,7 +40,7 @@ export default function Landing({ openForm = false }: { openForm?: boolean }) {
           <div className="info-card">
             <h3>{t('home.card3.title')}</h3>
             <p>{t('home.card3.body')}</p>
-            <button className="btn btn-primary btn-sm" style={{ marginTop: 14 }} onClick={() => setOpen(true)} type="button">
+            <button className="btn btn-primary btn-sm" style={{ marginTop: 14 }} onClick={goToGate} type="button">
               {t('nav.bp')}
             </button>
           </div>
@@ -86,7 +75,6 @@ export default function Landing({ openForm = false }: { openForm?: boolean }) {
         </div>
       </section>
 
-      {open && meta && <ApplicationForm meta={meta} onClose={() => setOpen(false)} />}
     </PublicShell>
   );
 }

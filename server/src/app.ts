@@ -13,7 +13,6 @@ import { auditRoutes } from './modules/audits.routes.js';
 import { authRoutes } from './modules/auth.routes.js';
 import { contractRoutes } from './modules/contracts.routes.js';
 import { documentRoutes } from './modules/documents.routes.js';
-import { importRoutes } from './modules/imports.routes.js';
 import { metaRoutes } from './modules/meta.routes.js';
 import { ncrRoutes } from './modules/ncrs.routes.js';
 import { portalRoutes } from './modules/portal.routes.js';
@@ -74,7 +73,6 @@ export function createApp(): express.Express {
   app.use('/api/admin/tasks', taskRoutes);
   app.use('/api/admin/users', userRoutes);
   app.use('/api/admin/stats', statsRoutes);
-  app.use('/api/admin/imports', importRoutes);
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'Uç nokta bulunamadı.', code: 'NOT_FOUND' });

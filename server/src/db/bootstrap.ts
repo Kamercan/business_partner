@@ -281,7 +281,7 @@ const DEMO_APPS: DemoApp[] = [
   {
     company: 'Anadolu Döküm Sanayi Ltd. Şti.', tax: '0710453322', sector: 'metalurji', city: 'Konya', country: 'tr',
     contact: 'Mehmet Yılmaz', email: 'm.yilmaz@anadoludokum.com', cats: ['dokum'], certs: ['iso9001', 'iatf'],
-    status: 'APPROVED', source: 'EYDEP', employees: '251-1000', revenue: '50M+', year: 1987,
+    status: 'APPROVED', source: 'WEB_FORM', employees: '251-1000', revenue: '50M+', year: 1987,
     about: 'Sfero ve kır döküm; motor bloğu, şanzıman gövdesi ve manifold üretimi. Yıllık 24.000 ton kapasite.',
     refs: 'Ford Otosan, TÜMOSAN, BMC', daysAgo: 120,
   },
@@ -295,14 +295,14 @@ const DEMO_APPS: DemoApp[] = [
   {
     company: 'Trakya Dişli ve Şanzıman San.', tax: '8340112255', sector: 'makine', city: 'Tekirdağ', country: 'tr',
     contact: 'Burak Şahin', email: 'burak@trakyadisli.com', cats: ['disli'], certs: ['iso9001'],
-    status: 'AUDIT_PLANNED', source: 'LINKEDIN', employees: '51-250', revenue: '1-10M', year: 2011,
+    status: 'AUDIT_PLANNED', source: 'WEB_FORM', employees: '51-250', revenue: '1-10M', year: 2011,
     about: 'Helisel ve düz dişli, planet grubu ve şanzıman alt montaj üretimi. CNC dişli açma ve taşlama parkuru.',
     refs: 'Hema Endüstri, Başak Traktör', daysAgo: 25,
   },
   {
     company: 'Bursa Kauçuk Hortum Ltd.', tax: '2230667788', sector: 'kaucuk_plastik', city: 'Bursa', country: 'tr',
     contact: 'Ayşe Kaya', email: 'ayse.kaya@bursakaucuk.com', cats: ['kaucuk'], certs: ['iso9001', 'iatf'],
-    status: 'IN_REVIEW', source: 'TURKISHEXPORTER', employees: '51-250', revenue: '1-10M', year: 2009,
+    status: 'IN_REVIEW', source: 'WEB_FORM', employees: '51-250', revenue: '1-10M', year: 2009,
     about: 'Yakıt, hidrolik ve soğutma hortumları; rakor ve kelepçe montajlı komple hatlar.',
     refs: 'Tofaş, Valeo, Mako', daysAgo: 6,
   },
@@ -323,7 +323,7 @@ const DEMO_APPS: DemoApp[] = [
   {
     company: 'Gebze Kablo Donanım San. Tic.', tax: '3890554411', sector: 'elektronik', city: 'Kocaeli', country: 'tr',
     contact: 'Hakan Arslan', email: 'hakan.arslan@gebzekablo.com', cats: ['elektrik'], certs: ['iso9001', 'iatf'],
-    status: 'NEEDS_INFO', source: 'EMAIL', employees: '51-250', revenue: '1-10M', year: 2013,
+    status: 'NEEDS_INFO', source: 'WEB_FORM', employees: '51-250', revenue: '1-10M', year: 2013,
     about: 'Kablo demeti, sensör kablajı ve gösterge paneli montajı.',
     refs: 'Ford Otosan, Türk Traktör', daysAgo: 12,
   },
@@ -337,7 +337,7 @@ const DEMO_APPS: DemoApp[] = [
   {
     company: 'Bucharest Hydraulic Components SRL', tax: 'RO40556677', sector: 'makine', city: 'Bucharest', country: 'ro',
     contact: 'Andrei Ionescu', email: 'andrei@bhc-ro.com', cats: ['hidrolik', 'disli'], certs: ['iso9001'],
-    status: 'ON_HOLD', source: 'LINKEDIN', employees: '1-50', revenue: '1-10M', year: 2018,
+    status: 'ON_HOLD', source: 'WEB_FORM', employees: '1-50', revenue: '1-10M', year: 2018,
     about: 'Hydraulic manifolds and control valve blocks, CNC machining.',
     refs: 'Bosch Rexroth RO', daysAgo: 60,
   },
@@ -351,7 +351,7 @@ const DEMO_APPS: DemoApp[] = [
   {
     company: 'İzmir Yüzey İşlem Merkezi', tax: '4560334477', sector: 'makine', city: 'İzmir', country: 'tr',
     contact: 'Cem Bulut', email: 'cem@izmiryuzey.com.tr', cats: ['islem'], certs: ['iso9001', 'iso14001'],
-    status: 'APPROVED', source: 'REFERRAL', employees: '1-50', revenue: '1-10M', year: 2010,
+    status: 'APPROVED', source: 'WEB_FORM', employees: '1-50', revenue: '1-10M', year: 2010,
     about: 'Elektrostatik toz boya, KTL kaplama, fosfatlama ve ısıl işlem hizmetleri.',
     refs: 'Ege Hidrolik, Manisa Pres', daysAgo: 150,
   },

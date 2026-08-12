@@ -9,7 +9,6 @@ export type MetaData = {
   employeeBands: string[];
   revenueBands: string[];
   statuses: string[];
-  sources: string[];
   org: { name: string; short: string };
   sla: { reviewDays: number; auditDays: number; ncrResponseDays: number };
 };

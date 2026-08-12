@@ -35,17 +35,11 @@ export const APPLICATION_STATUSES = [
 ] as const;
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
-export const APPLICATION_SOURCES = [
-  'WEB_FORM',
-  'EMAIL',
-  'LINKEDIN',
-  'EYDEP',
-  'TURKISHEXPORTER',
-  'FAIR',
-  'REFERRAL',
-  'IMPORT',
-  'OTHER',
-] as const;
+/**
+ * Tedarikçinin tek başvuru kanalı bu portaldır. Alan, geçmiş kayıtlarla
+ * uyum için şemada duruyor ancak arayüzde gösterilmez ve filtrelenmez.
+ */
+export const APPLICATION_SOURCES = ['WEB_FORM'] as const;
 
 export const ROLES = ['ADMIN', 'MODERATOR', 'QUALITY', 'VIEWER'] as const;
 export type Role = (typeof ROLES)[number];

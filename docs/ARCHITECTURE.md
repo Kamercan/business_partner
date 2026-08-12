@@ -38,7 +38,7 @@ tanımlı değilse bildirimler `mail_outbox` tablosuna yazılır ve panelden gö
 
 | Tablo | Rolü |
 |---|---|
-| `applications` | Tüm kanallardan gelen başvurular. Durum makinesinin taşıyıcısı. |
+| `applications` | Başvuru formundan gelen kayıtlar. Durum makinesinin taşıyıcısı. |
 | `application_categories` / `application_certifications` | Çoklu seçimler. Filtrelemenin dayandığı yer. |
 | `suppliers` | Denetimden geçip onaylanan firmalar (onaylı havuz). |
 | `audits` / `audit_scores` | Kalite denetimleri ve madde bazlı puanlar. |
