@@ -160,6 +160,17 @@ Gerçek gönderim için SMTP bilgilerini girin.
 Loglarda `npm ci` veya `tsc` hatası varsa dalın güncel olduğundan emin olun.
 Railway'de **Deployments → Redeploy** ile tekrar deneyin.
 
+**`dockerfile invalid: docker VOLUME ... is not supported, use Railway Volumes`**
+Bu hata eski bir sürümde vardı ve giderildi. Dalın güncel olduğundan emin olup
+**Redeploy** yapın. (Railway kalıcı diski Dockerfile üzerinden değil, yalnızca
+kendi Volume özelliğiyle yönetir — Adım 3.)
+
+**"Veritabanına yazamıyor / permission denied."**
+Kalıcı disk root sahipliğinde bağlanır. İmajdaki başlatma betiği bu sahipliği
+otomatik düzeltip uygulamayı yetkisiz kullanıcıya geçirir; ek bir şey yapmanız
+gerekmez. Yine de hata alıyorsanız Volume mount path'inin `/data` olduğunu
+doğrulayın.
+
 ---
 
 ## Kendi alan adınızı bağlamak
