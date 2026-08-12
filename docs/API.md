@@ -36,7 +36,7 @@ Zorunlu: `company_name`, `tax_id`, `sector`, `contact_name`, `email`, `phone`, `
 
 Opsiyonel: `founded_year`, `employee_band`, `revenue_band`, `website`, `sector_other`,
 `contact_position`, `country_other`, `address`, `references_text`, `about`,
-`category_other`, `certifications` (JSON dizi)
+`category_other`, `certifications` (JSON dizi), `lang` (`tr` | `en` | `ja`, varsayılan `tr`)
 
 Dosya alanları: `presentation`, `catalog`, `iso9001`, `cert_other` (çoklu), `financial`
 
@@ -144,6 +144,22 @@ Tüm maddeler puanlanmadan tamamlanamaz.
 | `PUT` | `/meta/settings` | ADMIN | Ayar güncelleme |
 | `POST` | `/meta/categories` | ADMIN | Ürün grubu ekleme/güncelleme |
 | `DELETE` | `/meta/categories/:code` | ADMIN | Pasifleştirme |
+
+---
+
+## Dil
+
+Arayüz her istekte `X-Lang: tr | en | ja` başlığını gönderir. Tedarikçinin
+görebileceği hata ve bilgi mesajları bu dilde döner (`server/src/lib/uiText.ts`);
+tanınmayan değer Türkçeye düşer. Yönetim paneline özgü mesajlar Türkçedir.
+
+`POST /applications` gövdesindeki `lang` alanı başvurunun dilini saklar ve
+tedarikçiye giden tüm e-postaların dilini belirler; onaydan sonra
+`suppliers.lang` alanına devrolur.
+
+`GET /meta` referans kayıtlarını üç dilde döndürür:
+`name_tr` / `name_en` / `name_ja` (ürün grupları ayrıca `hint_*`, sertifikalar
+`description_*`). Japoncası boşsa arayüz İngilizceye, o da yoksa Türkçeye düşer.
 
 ---
 

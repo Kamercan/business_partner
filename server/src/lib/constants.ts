@@ -4,20 +4,20 @@ export const EMPLOYEE_BANDS = ['1-50', '51-250', '251-1000', '1000+'] as const;
 export const REVENUE_BANDS = ['<1M', '1-10M', '10-50M', '50M+'] as const;
 
 export const COUNTRIES = [
-  { code: 'tr', tr: 'Türkiye', en: 'Türkiye' },
-  { code: 'bg', tr: 'Bulgaristan', en: 'Bulgaria' },
-  { code: 'gr', tr: 'Yunanistan', en: 'Greece' },
-  { code: 'ro', tr: 'Romanya', en: 'Romania' },
-  { code: 'rs', tr: 'Sırbistan', en: 'Serbia' },
-  { code: 'me', tr: 'Karadağ', en: 'Montenegro' },
-  { code: 'ba', tr: 'Bosna-Hersek', en: 'Bosnia & Herzegovina' },
-  { code: 'hr', tr: 'Hırvatistan', en: 'Croatia' },
-  { code: 'si', tr: 'Slovenya', en: 'Slovenia' },
-  { code: 'al', tr: 'Arnavutluk', en: 'Albania' },
-  { code: 'mk', tr: 'Kuzey Makedonya', en: 'North Macedonia' },
-  { code: 'xk', tr: 'Kosova', en: 'Kosovo' },
-  { code: 'md', tr: 'Moldova', en: 'Moldova' },
-  { code: 'other', tr: 'Diğer', en: 'Other' },
+  { code: 'tr', tr: 'Türkiye', en: 'Türkiye', ja: 'トルコ' },
+  { code: 'bg', tr: 'Bulgaristan', en: 'Bulgaria', ja: 'ブルガリア' },
+  { code: 'gr', tr: 'Yunanistan', en: 'Greece', ja: 'ギリシャ' },
+  { code: 'ro', tr: 'Romanya', en: 'Romania', ja: 'ルーマニア' },
+  { code: 'rs', tr: 'Sırbistan', en: 'Serbia', ja: 'セルビア' },
+  { code: 'me', tr: 'Karadağ', en: 'Montenegro', ja: 'モンテネグロ' },
+  { code: 'ba', tr: 'Bosna-Hersek', en: 'Bosnia & Herzegovina', ja: 'ボスニア・ヘルツェゴビナ' },
+  { code: 'hr', tr: 'Hırvatistan', en: 'Croatia', ja: 'クロアチア' },
+  { code: 'si', tr: 'Slovenya', en: 'Slovenia', ja: 'スロベニア' },
+  { code: 'al', tr: 'Arnavutluk', en: 'Albania', ja: 'アルバニア' },
+  { code: 'mk', tr: 'Kuzey Makedonya', en: 'North Macedonia', ja: '北マケドニア' },
+  { code: 'xk', tr: 'Kosova', en: 'Kosovo', ja: 'コソボ' },
+  { code: 'md', tr: 'Moldova', en: 'Moldova', ja: 'モルドバ' },
+  { code: 'other', tr: 'Diğer', en: 'Other', ja: 'その他' },
 ] as const;
 
 export const APPLICATION_STATUSES = [

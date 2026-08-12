@@ -38,13 +38,13 @@ metaRoutes.get(
   '/',
   ah((_req, res) => {
     const categories = db
-      .prepare('SELECT code, name_tr, name_en, hint_tr, hint_en FROM categories WHERE is_active = 1 ORDER BY sort_order, id')
+      .prepare('SELECT code, name_tr, name_en, name_ja, hint_tr, hint_en, hint_ja FROM categories WHERE is_active = 1 ORDER BY sort_order, id')
       .all();
     const certifications = db
-      .prepare('SELECT code, name, description_tr, description_en FROM certifications WHERE is_active = 1 ORDER BY sort_order, id')
+      .prepare('SELECT code, name, description_tr, description_en, description_ja FROM certifications WHERE is_active = 1 ORDER BY sort_order, id')
       .all();
     const sectors = db
-      .prepare('SELECT code, name_tr, name_en FROM sectors WHERE is_active = 1 ORDER BY sort_order, id')
+      .prepare('SELECT code, name_tr, name_en, name_ja FROM sectors WHERE is_active = 1 ORDER BY sort_order, id')
       .all();
 
     res.json({
@@ -108,8 +108,11 @@ const categorySchema = z.object({
   code: z.string().trim().min(2).max(40).regex(/^[a-z0-9_]+$/, 'Kod yalnızca küçük harf, rakam ve _ içerebilir.'),
   name_tr: z.string().trim().min(2).max(120),
   name_en: z.string().trim().min(2).max(120),
+  /** Japonca isteğe bağlıdır — girilmezse arayüz İngilizceye düşer. */
+  name_ja: z.string().trim().max(120).nullable().optional(),
   hint_tr: z.string().trim().max(500).nullable().optional(),
   hint_en: z.string().trim().max(500).nullable().optional(),
+  hint_ja: z.string().trim().max(500).nullable().optional(),
   sort_order: z.number().int().min(0).max(999).default(0),
   is_active: z.boolean().default(true),
 });
@@ -121,13 +124,14 @@ metaRoutes.post(
   ah((req, res) => {
     const body = parse(categorySchema, req.body);
     db.prepare(
-      `INSERT INTO categories (code, name_tr, name_en, hint_tr, hint_en, sort_order, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO categories (code, name_tr, name_en, name_ja, hint_tr, hint_en, hint_ja, sort_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(code) DO UPDATE SET name_tr = excluded.name_tr, name_en = excluded.name_en,
-         hint_tr = excluded.hint_tr, hint_en = excluded.hint_en,
-         sort_order = excluded.sort_order, is_active = excluded.is_active`,
+         name_ja = excluded.name_ja, hint_tr = excluded.hint_tr, hint_en = excluded.hint_en,
+         hint_ja = excluded.hint_ja, sort_order = excluded.sort_order, is_active = excluded.is_active`,
     ).run(
-      body.code, body.name_tr, body.name_en, body.hint_tr ?? null, body.hint_en ?? null,
+      body.code, body.name_tr, body.name_en, body.name_ja || null,
+      body.hint_tr ?? null, body.hint_en ?? null, body.hint_ja || null,
       body.sort_order, body.is_active ? 1 : 0,
     );
     logActivity({ entityType: 'SYSTEM', entityId: 0, action: 'CATEGORY_SAVED', actor: actorOf(req), to: body.code });
@@ -160,6 +164,7 @@ const certSchema = z.object({
   name: z.string().trim().min(2).max(80),
   description_tr: z.string().trim().max(300).nullable().optional(),
   description_en: z.string().trim().max(300).nullable().optional(),
+  description_ja: z.string().trim().max(300).nullable().optional(),
   sort_order: z.number().int().min(0).max(999).default(0),
   is_active: z.boolean().default(true),
 });
@@ -171,11 +176,15 @@ metaRoutes.post(
   ah((req, res) => {
     const body = parse(certSchema, req.body);
     db.prepare(
-      `INSERT INTO certifications (code, name, description_tr, description_en, sort_order, is_active)
-       VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO certifications (code, name, description_tr, description_en, description_ja, sort_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(code) DO UPDATE SET name = excluded.name, description_tr = excluded.description_tr,
-         description_en = excluded.description_en, sort_order = excluded.sort_order, is_active = excluded.is_active`,
-    ).run(body.code, body.name, body.description_tr ?? null, body.description_en ?? null, body.sort_order, body.is_active ? 1 : 0);
+         description_en = excluded.description_en, description_ja = excluded.description_ja,
+         sort_order = excluded.sort_order, is_active = excluded.is_active`,
+    ).run(
+      body.code, body.name, body.description_tr ?? null, body.description_en ?? null,
+      body.description_ja || null, body.sort_order, body.is_active ? 1 : 0,
+    );
     res.status(201).json({ ok: true });
   }),
 );

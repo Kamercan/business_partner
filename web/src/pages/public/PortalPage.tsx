@@ -27,7 +27,7 @@ type PortalData = {
  */
 export default function PortalPage() {
   const { token = '' } = useParams();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const toast = useToast();
 
   const [data, setData] = useState<PortalData | null>(null);
@@ -67,11 +67,11 @@ export default function PortalPage() {
       const form = new FormData();
       files.forEach((f) => form.append('files', f));
       await api.upload(`/portal/${token}/documents`, form);
-      toast.push('Belgeleriniz yüklendi.', 'ok');
+      toast.push(t('portal.toast.uploaded'), 'ok');
       setFiles(null);
       await load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Yükleme başarısız.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('sp.toast.upload.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -82,10 +82,10 @@ export default function PortalPage() {
     setBusy(true);
     try {
       await api.post(`/portal/${token}/messages`, { body: message.trim() });
-      toast.push('Mesajınız iletildi.', 'ok');
+      toast.push(t('portal.toast.message'), 'ok');
       setMessage('');
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Gönderilemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('sp.toast.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -99,7 +99,7 @@ export default function PortalPage() {
       setSent(true);
       await load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Gönderilemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('sp.toast.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -141,17 +141,17 @@ export default function PortalPage() {
                 <h2 style={{ fontSize: 18, marginTop: 2 }}>{data.ncr.title}</h2>
               </div>
               <div className="row">
-                <Badge tone={tone(NCR_SEVERITY, data.ncr.severity)}>{label(NCR_SEVERITY, data.ncr.severity)}</Badge>
-                <Badge tone={tone(NCR_STATUS, data.ncr.status)}>{label(NCR_STATUS, data.ncr.status)}</Badge>
+                <Badge tone={tone(NCR_SEVERITY, data.ncr.severity)}>{label(NCR_SEVERITY, data.ncr.severity, lang)}</Badge>
+                <Badge tone={tone(NCR_STATUS, data.ncr.status)}>{label(NCR_STATUS, data.ncr.status, lang)}</Badge>
               </div>
             </div>
 
             <div className="message-item">{data.ncr.description}</div>
 
             <div className="row wrap small muted" style={{ gap: 18, marginBottom: 18 }}>
-              {data.ncr.part_no && <span>Parça no: <strong>{data.ncr.part_no}</strong></span>}
-              {data.ncr.qty_affected !== null && <span>Etkilenen adet: <strong>{data.ncr.qty_affected}</strong></span>}
-              {data.ncr.due_date && <span>Son cevap tarihi: <strong>{formatDate(data.ncr.due_date)}</strong></span>}
+              {data.ncr.part_no && <span>{t('portal.part')}: <strong>{data.ncr.part_no}</strong></span>}
+              {data.ncr.qty_affected !== null && <span>{t('portal.qty')}: <strong>{data.ncr.qty_affected}</strong></span>}
+              {data.ncr.due_date && <span>{t('portal.due')}: <strong>{formatDate(data.ncr.due_date, false, lang)}</strong></span>}
             </div>
 
             <div className="section-label">{t('portal.ncr.title')}</div>
@@ -162,7 +162,7 @@ export default function PortalPage() {
                   value={ncrForm.containment}
                   disabled={sent}
                   onChange={(e) => setNcrForm({ ...ncrForm, containment: e.target.value })}
-                  placeholder="Etkilenen ürünler için aldığınız acil önlemler..."
+                  placeholder={t('sp.8d.containment.ph')}
                 />
               </div>
               <div className="field">
@@ -173,7 +173,7 @@ export default function PortalPage() {
                   value={ncrForm.root_cause}
                   disabled={sent}
                   onChange={(e) => setNcrForm({ ...ncrForm, root_cause: e.target.value })}
-                  placeholder="5 neden / balık kılçığı analizi sonucu tespit edilen kök neden..."
+                  placeholder={t('sp.8d.root.ph')}
                 />
               </div>
               <div className="field">
@@ -184,7 +184,7 @@ export default function PortalPage() {
                   value={ncrForm.corrective_action}
                   disabled={sent}
                   onChange={(e) => setNcrForm({ ...ncrForm, corrective_action: e.target.value })}
-                  placeholder="Kök nedeni ortadan kaldıracak faaliyetler ve termin tarihleri..."
+                  placeholder={t('sp.8d.corrective.ph')}
                 />
               </div>
               <div className="field">
@@ -193,7 +193,7 @@ export default function PortalPage() {
                   value={ncrForm.preventive_action}
                   disabled={sent}
                   onChange={(e) => setNcrForm({ ...ncrForm, preventive_action: e.target.value })}
-                  placeholder="Benzer uygunsuzlukların tekrarını önleyecek sistemsel iyileştirmeler..."
+                  placeholder={t('sp.8d.preventive.ph')}
                 />
               </div>
 
@@ -223,7 +223,7 @@ export default function PortalPage() {
             {data.requests?.map((r, i) => (
               <div className="message-item" key={i}>
                 {r.body}
-                <time>{formatDate(r.created_at, true)}</time>
+                <time>{formatDate(r.created_at, true, lang)}</time>
               </div>
             ))}
           </div>
@@ -252,7 +252,7 @@ export default function PortalPage() {
                 <li key={d.id} className="row-between small" style={{ padding: '8px 10px', background: 'var(--bg-2)', borderRadius: 6 }}>
                   <span>{d.original_name}</span>
                   <span className="muted">
-                    {formatBytes(d.size_bytes)} · {formatDate(d.created_at)}
+                    {formatBytes(d.size_bytes)} · {formatDate(d.created_at, false, lang)}
                   </span>
                 </li>
               ))}
@@ -264,7 +264,7 @@ export default function PortalPage() {
         <div className="card">
           <div className="card-title">{t('portal.message')}</div>
           <div className="field">
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Yanmar ekibine iletmek istediğiniz açıklama..." />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t('portal.message.ph')} />
           </div>
           <button className="btn" style={{ marginTop: 12 }} onClick={sendMessage} disabled={!message.trim() || busy} type="button">
             {t('btn.send')}

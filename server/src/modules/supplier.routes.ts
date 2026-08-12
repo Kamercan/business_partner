@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import bcrypt from 'bcryptjs';
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { config } from '../config.js';
 import { db } from '../db/index.js';
+import { COUNTRIES } from '../lib/constants.js';
 import { logActivity } from '../lib/activity.js';
 import { ah, badRequest, notFound, parse, unauthorized } from '../lib/http.js';
 import { randomToken, sha256 } from '../lib/ids.js';
@@ -12,6 +13,7 @@ import { createTask } from '../lib/tasks.js';
 import { loginLimiter, portalLimiter } from '../middleware/rateLimit.js';
 import { PORTAL_ALLOWED_STATUSES, requireSupplier, signSupplierToken } from '../middleware/supplierAuth.js';
 import { documentPath, persistDocument, upload } from '../middleware/upload.js';
+import { ut } from '../lib/uiText.js';
 
 /**
  * Onaylı tedarikçi portalı.
@@ -22,6 +24,15 @@ import { documentPath, persistDocument, upload } from '../middleware/upload.js';
  * Yalnızca APPROVED / CONDITIONAL durumundaki tedarikçiler girebilir.
  */
 export const supplierRoutes = Router();
+
+/**
+ * Ülke kodunun üç dildeki adı. Kod listede yoksa (başvuruda "diğer" seçilip
+ * ülke adı elle yazılmışsa) yazılan metin üç dilde de olduğu gibi gösterilir.
+ */
+function countryLabel(code: string): { name_tr: string; name_en: string; name_ja: string } {
+  const found = COUNTRIES.find((c) => c.code === code.toLowerCase());
+  return found ? { name_tr: found.tr, name_en: found.en, name_ja: found.ja } : { name_tr: code, name_en: code, name_ja: code };
+}
 
 const passwordRule = z
   .string()
@@ -45,15 +56,15 @@ type TokenRow = {
   used_at: string | null;
 };
 
-function resolveSetPasswordToken(token: string): TokenRow {
+function resolveSetPasswordToken(req: Request, token: string): TokenRow {
   const row = db.prepare('SELECT * FROM portal_tokens WHERE token_hash = ?').get(sha256(token)) as TokenRow | undefined;
   if (!row || row.purpose !== 'SET_PASSWORD' || row.entity_type !== 'SUPPLIER') {
-    throw badRequest('Bağlantı geçersiz.');
+    throw badRequest(ut(req, 'token.invalid'));
   }
-  if (row.revoked) throw badRequest('Bu bağlantı iptal edilmiş.');
-  if (row.used_at) throw badRequest('Bu bağlantı daha önce kullanılmış. Parolanızı unuttuysanız yeni bir bağlantı isteyin.');
+  if (row.revoked) throw badRequest(ut(req, 'token.revoked'));
+  if (row.used_at) throw badRequest(ut(req, 'token.used'));
   if (new Date(row.expires_at.replace(' ', 'T') + 'Z') < new Date()) {
-    throw badRequest('Bağlantının süresi dolmuş. Giriş ekranından yeni bir bağlantı isteyebilirsiniz.');
+    throw badRequest(ut(req, 'token.expired'));
   }
   return row;
 }
@@ -63,11 +74,11 @@ supplierRoutes.get(
   '/set-password/:token',
   portalLimiter,
   ah((req, res) => {
-    const t = resolveSetPasswordToken(req.params.token);
+    const t = resolveSetPasswordToken(req, req.params.token);
     const supplier = db
       .prepare('SELECT company_name, supplier_code, email, password_hash FROM suppliers WHERE id = ?')
       .get(t.entity_id) as { company_name: string; supplier_code: string; email: string; password_hash: string | null } | undefined;
-    if (!supplier) throw notFound('Tedarikçi kaydı bulunamadı.');
+    if (!supplier) throw notFound(ut(req, 'notfound.supplier'));
 
     res.json({
       company_name: supplier.company_name,
@@ -83,15 +94,15 @@ supplierRoutes.post(
   '/set-password/:token',
   portalLimiter,
   ah((req, res) => {
-    const t = resolveSetPasswordToken(req.params.token);
+    const t = resolveSetPasswordToken(req, req.params.token);
     const body = parse(z.object({ password: passwordRule }), req.body);
 
     const supplier = db.prepare('SELECT id, company_name, status FROM suppliers WHERE id = ?').get(t.entity_id) as
       | { id: number; company_name: string; status: string }
       | undefined;
-    if (!supplier) throw notFound('Tedarikçi kaydı bulunamadı.');
+    if (!supplier) throw notFound(ut(req, 'notfound.supplier'));
     if (!PORTAL_ALLOWED_STATUSES.includes(supplier.status as 'APPROVED')) {
-      throw badRequest('Tedarikçi kaydınız portal erişimine açık değil.');
+      throw badRequest(ut(req, 'notfound.portal'));
     }
 
     db.prepare("UPDATE suppliers SET password_hash = ?, updated_at = datetime('now') WHERE id = ?").run(
@@ -109,7 +120,7 @@ supplierRoutes.post(
       detail: 'Tedarikçi portal parolasını belirledi.',
     });
 
-    res.json({ ok: true, message: 'Parolanız oluşturuldu. Şimdi giriş yapabilirsiniz.' });
+    res.json({ ok: true, message: ut(req, 'pw.set.ok') });
   }),
 );
 
@@ -136,9 +147,9 @@ supplierRoutes.post(
     const hash = supplier?.password_hash ?? '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidi';
     const ok = bcrypt.compareSync(body.password, hash);
 
-    if (!supplier || !supplier.password_hash || !ok) throw unauthorized('E-posta veya parola hatalı.');
+    if (!supplier || !supplier.password_hash || !ok) throw unauthorized(ut(req, 'login.bad'));
     if (!PORTAL_ALLOWED_STATUSES.includes(supplier.status as 'APPROVED')) {
-      throw unauthorized('Tedarikçi kaydınız şu anda portal erişimine açık değil.');
+      throw unauthorized(ut(req, 'login.closed'));
     }
 
     db.prepare("UPDATE suppliers SET portal_last_login_at = datetime('now') WHERE id = ?").run(supplier.id);
@@ -182,8 +193,8 @@ supplierRoutes.post(
   ah(async (req, res) => {
     const body = parse(z.object({ email: z.string().trim().email() }), req.body);
     const supplier = db
-      .prepare('SELECT id, company_name, email, status FROM suppliers WHERE lower(email) = lower(?)')
-      .get(body.email) as { id: number; company_name: string; email: string; status: string } | undefined;
+      .prepare('SELECT id, company_name, email, status, lang FROM suppliers WHERE lower(email) = lower(?)')
+      .get(body.email) as { id: number; company_name: string; email: string; status: string; lang: string } | undefined;
 
     if (supplier && PORTAL_ALLOWED_STATUSES.includes(supplier.status as 'APPROVED')) {
       const token = randomToken();
@@ -194,7 +205,7 @@ supplierRoutes.post(
       await notifyPortalInvite(supplier, token, true);
     }
 
-    res.json({ ok: true, message: 'Kayıtlı bir tedarikçi hesabı varsa parola bağlantısı e-posta ile gönderildi.' });
+    res.json({ ok: true, message: ut(req, 'pw.forgot.sent') });
   }),
 );
 
@@ -244,7 +255,11 @@ supplierRoutes.get(
       )
       .all(s.id);
 
-    res.json({ supplier: detail, summary: { openNcrs, pendingResponse, activeContracts }, messages });
+    res.json({
+      supplier: { ...detail, country_label: countryLabel(String(detail.country ?? '')) },
+      summary: { openNcrs, pendingResponse, activeContracts },
+      messages,
+    });
   }),
 );
 
@@ -258,7 +273,7 @@ supplierRoutes.post(
     const row = db.prepare('SELECT password_hash FROM suppliers WHERE id = ?').get(req.supplier!.id) as {
       password_hash: string;
     };
-    if (!bcrypt.compareSync(body.current_password, row.password_hash)) throw badRequest('Mevcut parolanız hatalı.');
+    if (!bcrypt.compareSync(body.current_password, row.password_hash)) throw badRequest(ut(req, 'pw.current.bad'));
 
     db.prepare("UPDATE suppliers SET password_hash = ?, updated_at = datetime('now') WHERE id = ?").run(
       bcrypt.hashSync(body.new_password, 10),
@@ -308,7 +323,7 @@ supplierRoutes.post(
   ah((req, res) => {
     const s = req.supplier!;
     const files = (req.files ?? []) as Express.Multer.File[];
-    if (files.length === 0) throw badRequest('En az bir dosya seçiniz.');
+    if (files.length === 0) throw badRequest(ut(req, 'upload.empty'));
     const note = typeof req.body?.note === 'string' ? req.body.note.slice(0, 300) : null;
 
     const stored = files.map((file) =>
@@ -363,10 +378,10 @@ supplierRoutes.get(
       .get(Number(req.params.id), s.id, s.id, s.id) as
       | { owner_type: string; owner_id: number; stored_name: string; original_name: string; mime_type: string }
       | undefined;
-    if (!doc) throw notFound('Belge bulunamadı.');
+    if (!doc) throw notFound(ut(req, 'notfound.document'));
 
     const filePath = documentPath(doc.owner_type, doc.owner_id, doc.stored_name);
-    if (!fs.existsSync(filePath)) throw notFound('Belge dosyası bulunamadı.');
+    if (!fs.existsSync(filePath)) throw notFound(ut(req, 'notfound.file'));
 
     res.setHeader('Content-Type', doc.mime_type);
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(doc.original_name)}`);
@@ -409,8 +424,8 @@ supplierRoutes.post(
       Number(req.params.id),
       s.id,
     ) as { id: number; ncr_no: string; status: string } | undefined;
-    if (!ncr) throw notFound('Uygunsuzluk raporu bulunamadı.');
-    if (['CLOSED'].includes(ncr.status)) throw badRequest('Bu uygunsuzluk kaydı kapatılmış.');
+    if (!ncr) throw notFound(ut(req, 'notfound.ncr'));
+    if (['CLOSED'].includes(ncr.status)) throw badRequest(ut(req, 'ncr.closed'));
 
     db.prepare(
       `UPDATE ncrs SET containment = ?, root_cause = ?, corrective_action = ?, preventive_action = ?,
@@ -429,7 +444,7 @@ supplierRoutes.post(
     });
     await notifyNcrResponded({ id: ncr.id, ncr_no: ncr.ncr_no }, s.company_name);
 
-    res.json({ ok: true, message: 'Cevabınız iletildi. Kalite birimimiz inceleyecektir.' });
+    res.json({ ok: true, message: ut(req, 'ncr.responded') });
   }),
 );
 
@@ -443,10 +458,10 @@ supplierRoutes.post(
       Number(req.params.id),
       s.id,
     ) as { id: number; ncr_no: string } | undefined;
-    if (!ncr) throw notFound('Uygunsuzluk raporu bulunamadı.');
+    if (!ncr) throw notFound(ut(req, 'notfound.ncr'));
 
     const files = (req.files ?? []) as Express.Multer.File[];
-    if (files.length === 0) throw badRequest('En az bir dosya seçiniz.');
+    if (files.length === 0) throw badRequest(ut(req, 'upload.empty'));
 
     const stored = files.map((file) =>
       persistDocument({
@@ -500,7 +515,7 @@ supplierRoutes.get(
           WHERE id = ? AND audience = 'SUPPLIER' AND lower(to_email) = lower(?)`,
       )
       .get(Number(req.params.id), req.supplier!.email);
-    if (!row) throw notFound('Bildirim bulunamadı.');
+    if (!row) throw notFound(ut(req, 'notfound.mail'));
     res.json(row);
   }),
 );

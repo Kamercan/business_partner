@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db/index.js';
+import { ut } from '../lib/uiText.js';
 import { logActivity } from '../lib/activity.js';
 import { ah, badRequest, notFound, parse } from '../lib/http.js';
 import { sha256 } from '../lib/ids.js';
@@ -62,7 +63,7 @@ portalRoutes.post(
       | undefined;
 
     // Bilgi sızdırmamak için "bulunamadı" tek tip mesajla döner.
-    if (!app) throw notFound('Bu referans numarası ve e-posta ile eşleşen bir başvuru bulunamadı.');
+    if (!app) throw notFound(ut(req, 'notfound.application'));
 
     const audit = db
       .prepare(

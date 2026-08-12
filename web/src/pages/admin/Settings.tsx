@@ -46,7 +46,7 @@ export default function Settings() {
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [catModal, setCatModal] = useState(false);
-  const [cat, setCat] = useState({ code: '', name_tr: '', name_en: '', hint_tr: '', hint_en: '' });
+  const [cat, setCat] = useState({ code: '', name_tr: '', name_en: '', name_ja: '', hint_tr: '', hint_en: '', hint_ja: '' });
   const [pwModal, setPwModal] = useState(false);
   const [pw, setPw] = useState({ current_password: '', new_password: '' });
 
@@ -84,14 +84,16 @@ export default function Settings() {
         code: cat.code,
         name_tr: cat.name_tr,
         name_en: cat.name_en || cat.name_tr,
+        name_ja: cat.name_ja || null,
         hint_tr: cat.hint_tr || null,
         hint_en: cat.hint_en || null,
+        hint_ja: cat.hint_ja || null,
         sort_order: 50,
         is_active: true,
       });
       toast.push('Ürün grubu eklendi. Başvuru formunda hemen görünür.', 'ok');
       setCatModal(false);
-      setCat({ code: '', name_tr: '', name_en: '', hint_tr: '', hint_en: '' });
+      setCat({ code: '', name_tr: '', name_en: '', name_ja: '', hint_tr: '', hint_en: '', hint_ja: '' });
       window.location.reload();
     } catch (err) {
       toast.push(err instanceof ApiError ? err.message : 'Eklenemedi.', 'error');
@@ -274,6 +276,11 @@ export default function Settings() {
             <div className="field">
               <label>İngilizce adı</label>
               <input value={cat.name_en} onChange={(e) => setCat({ ...cat, name_en: e.target.value })} placeholder="Welded Assembly Groups" />
+            </div>
+            <div className="field">
+              <label>Japonca adı</label>
+              <input value={cat.name_ja} onChange={(e) => setCat({ ...cat, name_ja: e.target.value })} placeholder="溶接組立ユニット" />
+              <span className="hint">Boş bırakılırsa Japonca arayüzde İngilizce adı görünür.</span>
             </div>
             <div className="field">
               <label>Açıklama (form üzerindeki ipucu)</label>

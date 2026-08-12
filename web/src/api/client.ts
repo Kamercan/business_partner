@@ -45,8 +45,18 @@ type Options = {
   signal?: AbortSignal;
 };
 
+/**
+ * Arayüzün seçili dili. Sunucu, kullanıcıya dönen hata ve bilgi mesajlarını bu
+ * başlığa göre üretir; böylece Japonca portalda Türkçe uyarı çıkmaz.
+ * localStorage'dan okunur — i18n bağlamı React dışında erişilebilir değil.
+ */
+function currentLang(): string {
+  const stored = localStorage.getItem('bp_lang');
+  return stored === 'en' || stored === 'ja' ? stored : 'tr';
+}
+
 async function request<T>(path: string, options: Options = {}): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { 'X-Lang': currentLang() };
   const token = tokenForPath(path);
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -97,7 +107,7 @@ export const api = {
   async download(path: string, fallbackName: string): Promise<void> {
     const token = tokenForPath(path);
     const res = await fetch(`/api${path}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: { 'X-Lang': currentLang(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       credentials: 'include',
     });
     if (!res.ok) {

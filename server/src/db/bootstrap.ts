@@ -16,114 +16,144 @@ const CATEGORIES = [
     code: 'sac',
     name_tr: 'Sac Metal Şekillendirme',
     name_en: 'Sheet Metal Forming',
+    name_ja: '板金加工',
     hint_tr:
       'Şasi parçaları, motor kapakları, kabin panelleri, koruma plakaları, kaput, çamurluk — pres, lazer kesim, büküm, kaynaklı imalat vb. operasyonları',
     hint_en:
       'Chassis parts, engine covers, cabin panels, guard plates, hoods, fenders — pressing, laser cutting, bending, welded fabrication etc.',
+    hint_ja:
+      'シャシー部品、エンジンカバー、キャビンパネル、保護プレート、ボンネット、フェンダー — プレス、レーザー切断、曲げ、溶接組立など',
   },
   {
     code: 'disli',
     name_tr: 'Güç Aktarım Elemanları',
     name_en: 'Power Transmission Components',
+    name_ja: '動力伝達部品',
     hint_tr: 'Dişliler, şanzıman parçaları, kavramalar, kardan mili, diferansiyel ve tahrik elemanları',
     hint_en: 'Gears, transmission components, clutches, drive shafts, differentials and drive elements',
+    hint_ja:
+      '歯車、トランスミッション部品、クラッチ、プロペラシャフト、デファレンシャル、駆動部品',
   },
   {
     code: 'dokum',
     name_tr: 'Hassas ve Endüstriyel Döküm',
     name_en: 'Precision & Industrial Casting',
+    name_ja: '精密・産業用鋳造',
     hint_tr:
       'Motor blokları, silindir kapakları, krank mili, dişli kutusu gövdeleri, manifoldlar — sfero, kır döküm ve hassas döküm parçaları',
     hint_en:
       'Engine blocks, cylinder heads, crankshafts, gearbox housings, manifolds — ductile, gray and precision casting parts',
+    hint_ja:
+      'エンジンブロック、シリンダーヘッド、クランクシャフト、ギアボックスハウジング、マニホールド — ダクタイル鋳鉄、ねずみ鋳鉄、精密鋳造品',
   },
   {
     code: 'kaucuk',
     name_tr: 'Esnek Hortum ve Bağlantı Elemanları',
     name_en: 'Flexible Hoses & Connectors',
+    name_ja: 'ホース・継手類',
     hint_tr:
       'Yakıt hortumları, hidrolik hortumlar, soğutma hortumları, hava emiş hortumları ve bağlantı elemanları (kelepçe, rakor, conta)',
     hint_en:
       'Fuel hoses, hydraulic hoses, coolant hoses, air intake hoses and connectors (clamps, fittings, gaskets)',
+    hint_ja:
+      '燃料ホース、油圧ホース、冷却ホース、吸気ホース、および継手類（クランプ、フィッティング、ガスケット）',
   },
   {
     code: 'izolasyon',
     name_tr: 'Termal ve Akustik Yalıtım Çözümleri',
     name_en: 'Thermal & Acoustic Insulation Solutions',
+    name_ja: '断熱・防音ソリューション',
     hint_tr:
       'Egzoz manifold ceketleri, motor ses yalıtım panelleri, kabin akustik yalıtımı, ısı yalıtım battaniyeleri',
     hint_en:
       'Exhaust manifold jackets, engine acoustic panels, cabin acoustic insulation, heat insulation blankets',
+    hint_ja:
+      '排気マニホールドジャケット、エンジン防音パネル、キャビン防音材、断熱ブランケット',
   },
   {
     code: 'hidrolik',
     name_tr: 'Hidrolik Güç ve Kontrol Üniteleri',
     name_en: 'Hydraulic Power & Control Units',
+    name_ja: '油圧機器・制御ユニット',
     hint_tr: 'Hidrolik pompalar, valfler, silindirler, manifoldlar, kontrol valfleri ve hidrolik tank üniteleri',
     hint_en: 'Hydraulic pumps, valves, cylinders, manifolds, control valves and hydraulic tank units',
+    hint_ja:
+      '油圧ポンプ、バルブ、シリンダー、マニホールド、コントロールバルブ、油圧タンクユニット',
   },
   {
     code: 'kimyasal',
     name_tr: 'Endüstriyel Sarf ve Kimyasallar',
     name_en: 'Industrial Consumables & Chemicals',
+    name_ja: '工業用消耗品・化学品',
     hint_tr:
       'Motor / hidrolik / dişli yağları, gres, antifriz, sızdırmazlık ürünleri, endüstriyel temizleyici ve boyalar',
     hint_en: 'Engine / hydraulic / gear oils, greases, coolants, sealants, industrial cleaners and paints',
+    hint_ja:
+      'エンジン／油圧／ギヤオイル、グリース、不凍液、シール材、工業用洗浄剤、塗料',
   },
   {
     code: 'elektrik',
     name_tr: 'Elektrik ve Kablo Donanımı',
     name_en: 'Electrical & Wiring Harness',
+    name_ja: '電装・ワイヤーハーネス',
     hint_tr: 'Kablo demetleri, sensörler, gösterge panelleri, aydınlatma grupları, akü ve şarj sistemleri',
     hint_en: 'Wiring harnesses, sensors, instrument clusters, lighting groups, batteries and charging systems',
+    hint_ja:
+      'ワイヤーハーネス、センサー、メーターパネル、灯火類、バッテリー・充電システム',
   },
   {
     code: 'islem',
     name_tr: 'Yüzey İşlem ve Isıl İşlem',
     name_en: 'Surface & Heat Treatment',
+    name_ja: '表面処理・熱処理',
     hint_tr: 'Boyama, kaplama, galvaniz, fosfat, sementasyon, indüksiyon sertleştirme hizmetleri',
     hint_en: 'Painting, coating, galvanizing, phosphating, carburizing, induction hardening services',
+    hint_ja:
+      '塗装、めっき、亜鉛めっき、リン酸処理、浸炭、高周波焼入れなどの処理サービス',
   },
   {
     code: 'lojistik',
     name_tr: 'Ambalaj ve Lojistik Hizmetleri',
     name_en: 'Packaging & Logistics Services',
+    name_ja: '梱包・物流サービス',
     hint_tr: 'Endüstriyel ambalaj, palet, kasa imalatı, iç/dış lojistik ve gümrükleme hizmetleri',
     hint_en: 'Industrial packaging, pallets, crates, inbound/outbound logistics and customs services',
+    hint_ja:
+      '工業用梱包、パレット、木箱製作、入出荷物流、通関業務',
   },
-  { code: 'diger', name_tr: 'Diğer', name_en: 'Other', hint_tr: null, hint_en: null },
+  { code: 'diger', name_tr: 'Diğer', name_en: 'Other', name_ja: 'その他', hint_tr: null, hint_en: null, hint_ja: null },
 ];
 
 const CERTIFICATIONS = [
-  { code: 'iso9001', name: 'ISO 9001', tr: 'Kalite Yönetim Sistemi', en: 'Quality Management System' },
-  { code: 'iatf', name: 'IATF 16949', tr: 'Otomotiv Kalite Yönetim Sistemi', en: 'Automotive QMS' },
-  { code: 'iso14001', name: 'ISO 14001', tr: 'Çevre Yönetim Sistemi', en: 'Environmental Management' },
-  { code: 'iso45001', name: 'ISO 45001', tr: 'İş Sağlığı ve Güvenliği', en: 'Occupational Health & Safety' },
-  { code: 'iso50001', name: 'ISO 50001', tr: 'Enerji Yönetim Sistemi', en: 'Energy Management' },
-  { code: 'ce', name: 'CE', tr: 'Avrupa Uygunluk İşareti', en: 'European Conformity' },
-  { code: 'en15085', name: 'EN 15085', tr: 'Demiryolu Kaynak Sertifikasyonu', en: 'Railway Welding Certification' },
-  { code: 'iso3834', name: 'ISO 3834', tr: 'Kaynak Kalite Gereklilikleri', en: 'Welding Quality Requirements' },
-  { code: 'as9100', name: 'AS 9100', tr: 'Havacılık Kalite Yönetimi', en: 'Aerospace Quality Management' },
-  { code: 'iso27001', name: 'ISO 27001', tr: 'Bilgi Güvenliği Yönetimi', en: 'Information Security Management' },
+  { code: 'iso9001', name: 'ISO 9001', tr: 'Kalite Yönetim Sistemi', en: 'Quality Management System', ja: '品質マネジメントシステム' },
+  { code: 'iatf', name: 'IATF 16949', tr: 'Otomotiv Kalite Yönetim Sistemi', en: 'Automotive QMS', ja: '自動車産業品質マネジメントシステム' },
+  { code: 'iso14001', name: 'ISO 14001', tr: 'Çevre Yönetim Sistemi', en: 'Environmental Management', ja: '環境マネジメントシステム' },
+  { code: 'iso45001', name: 'ISO 45001', tr: 'İş Sağlığı ve Güvenliği', en: 'Occupational Health & Safety', ja: '労働安全衛生マネジメントシステム' },
+  { code: 'iso50001', name: 'ISO 50001', tr: 'Enerji Yönetim Sistemi', en: 'Energy Management', ja: 'エネルギーマネジメントシステム' },
+  { code: 'ce', name: 'CE', tr: 'Avrupa Uygunluk İşareti', en: 'European Conformity', ja: '欧州適合マーク' },
+  { code: 'en15085', name: 'EN 15085', tr: 'Demiryolu Kaynak Sertifikasyonu', en: 'Railway Welding Certification', ja: '鉄道車両溶接認証' },
+  { code: 'iso3834', name: 'ISO 3834', tr: 'Kaynak Kalite Gereklilikleri', en: 'Welding Quality Requirements', ja: '溶接品質要求事項' },
+  { code: 'as9100', name: 'AS 9100', tr: 'Havacılık Kalite Yönetimi', en: 'Aerospace Quality Management', ja: '航空宇宙品質マネジメント' },
+  { code: 'iso27001', name: 'ISO 27001', tr: 'Bilgi Güvenliği Yönetimi', en: 'Information Security Management', ja: '情報セキュリティマネジメント' },
 ];
 
 const SECTORS = [
-  ['otomotiv', 'Otomotiv', 'Automotive'],
-  ['otomotiv_yan', 'Otomotiv Yan Sanayi', 'Automotive Components'],
-  ['tarim', 'Tarım Makineleri', 'Agricultural Machinery'],
-  ['insaat', 'İş ve İnşaat Makineleri', 'Construction & Earthmoving Equipment'],
-  ['beyaz_esya', 'Beyaz Eşya', 'Home Appliances'],
-  ['savunma', 'Savunma Sanayi', 'Defense Industry'],
-  ['metalurji', 'Demir-Çelik ve Metalurji', 'Iron-Steel & Metallurgy'],
-  ['makine', 'Makine İmalat', 'Machinery Manufacturing'],
-  ['elektronik', 'Elektrik-Elektronik', 'Electrical & Electronics'],
-  ['kimya', 'Kimya ve Petrokimya', 'Chemicals & Petrochemicals'],
-  ['kaucuk_plastik', 'Kauçuk ve Plastik', 'Rubber & Plastics'],
-  ['havacilik', 'Havacılık ve Uzay', 'Aerospace'],
-  ['denizcilik', 'Denizcilik ve Tersane', 'Marine & Shipyard'],
-  ['demiryolu', 'Demiryolu', 'Railway'],
-  ['enerji', 'Enerji ve Güç Sistemleri', 'Energy & Power Systems'],
-  ['diger', 'Diğer', 'Other'],
+  ['otomotiv', 'Otomotiv', 'Automotive', '自動車'],
+  ['otomotiv_yan', 'Otomotiv Yan Sanayi', 'Automotive Components', '自動車部品'],
+  ['tarim', 'Tarım Makineleri', 'Agricultural Machinery', '農業機械'],
+  ['insaat', 'İş ve İnşaat Makineleri', 'Construction & Earthmoving Equipment', '建設・土木機械'],
+  ['beyaz_esya', 'Beyaz Eşya', 'Home Appliances', '家電'],
+  ['savunma', 'Savunma Sanayi', 'Defense Industry', '防衛産業'],
+  ['metalurji', 'Demir-Çelik ve Metalurji', 'Iron-Steel & Metallurgy', '鉄鋼・冶金'],
+  ['makine', 'Makine İmalat', 'Machinery Manufacturing', '機械製造'],
+  ['elektronik', 'Elektrik-Elektronik', 'Electrical & Electronics', '電気・電子'],
+  ['kimya', 'Kimya ve Petrokimya', 'Chemicals & Petrochemicals', '化学・石油化学'],
+  ['kaucuk_plastik', 'Kauçuk ve Plastik', 'Rubber & Plastics', 'ゴム・プラスチック'],
+  ['havacilik', 'Havacılık ve Uzay', 'Aerospace', '航空宇宙'],
+  ['denizcilik', 'Denizcilik ve Tersane', 'Marine & Shipyard', '船舶・造船'],
+  ['demiryolu', 'Demiryolu', 'Railway', '鉄道'],
+  ['enerji', 'Enerji ve Güç Sistemleri', 'Energy & Power Systems', 'エネルギー・電力システム'],
+  ['diger', 'Diğer', 'Other', 'その他'],
 ];
 
 /** IATF 16949 esinli, ağırlıklı tedarikçi denetim kontrol listesi. */
@@ -161,27 +191,31 @@ const AUDIT_ITEMS: Array<[string, string, string, string, number]> = [
 
 export function seedReference(): void {
   const cat = db.prepare(
-    `INSERT INTO categories (code, name_tr, name_en, hint_tr, hint_en, sort_order)
-     VALUES (@code, @name_tr, @name_en, @hint_tr, @hint_en, @sort_order)
+    `INSERT INTO categories (code, name_tr, name_en, name_ja, hint_tr, hint_en, hint_ja, sort_order)
+     VALUES (@code, @name_tr, @name_en, @name_ja, @hint_tr, @hint_en, @hint_ja, @sort_order)
      ON CONFLICT(code) DO UPDATE SET
-       name_tr = excluded.name_tr, name_en = excluded.name_en,
-       hint_tr = excluded.hint_tr, hint_en = excluded.hint_en,
+       name_tr = excluded.name_tr, name_en = excluded.name_en, name_ja = excluded.name_ja,
+       hint_tr = excluded.hint_tr, hint_en = excluded.hint_en, hint_ja = excluded.hint_ja,
        sort_order = excluded.sort_order`,
   );
-  CATEGORIES.forEach((c, i) => cat.run({ ...c, hint_tr: c.hint_tr ?? null, hint_en: c.hint_en ?? null, sort_order: i }));
+  CATEGORIES.forEach((c, i) =>
+    cat.run({ ...c, hint_tr: c.hint_tr ?? null, hint_en: c.hint_en ?? null, hint_ja: c.hint_ja ?? null, sort_order: i }),
+  );
 
   const cert = db.prepare(
-    `INSERT INTO certifications (code, name, description_tr, description_en, sort_order)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(code) DO UPDATE SET name = excluded.name, sort_order = excluded.sort_order`,
+    `INSERT INTO certifications (code, name, description_tr, description_en, description_ja, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(code) DO UPDATE SET name = excluded.name, description_ja = excluded.description_ja,
+       sort_order = excluded.sort_order`,
   );
-  CERTIFICATIONS.forEach((c, i) => cert.run(c.code, c.name, c.tr, c.en, i));
+  CERTIFICATIONS.forEach((c, i) => cert.run(c.code, c.name, c.tr, c.en, c.ja, i));
 
   const sec = db.prepare(
-    `INSERT INTO sectors (code, name_tr, name_en, sort_order) VALUES (?, ?, ?, ?)
-     ON CONFLICT(code) DO UPDATE SET name_tr = excluded.name_tr, name_en = excluded.name_en`,
+    `INSERT INTO sectors (code, name_tr, name_en, name_ja, sort_order) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(code) DO UPDATE SET name_tr = excluded.name_tr, name_en = excluded.name_en,
+       name_ja = excluded.name_ja`,
   );
-  SECTORS.forEach(([code, tr, en], i) => sec.run(code, tr, en, i));
+  SECTORS.forEach(([code, tr, en, ja], i) => sec.run(code, tr, en, ja, i));
 
   // Denetim şablonu
   const existing = db.prepare('SELECT id FROM audit_templates WHERE code = ?').get('SUPPLIER_STD_V1') as

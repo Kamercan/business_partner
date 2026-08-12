@@ -36,8 +36,10 @@ CREATE TABLE IF NOT EXISTS categories (
   code        TEXT NOT NULL UNIQUE,
   name_tr     TEXT NOT NULL,
   name_en     TEXT NOT NULL,
+  name_ja     TEXT,
   hint_tr     TEXT,
   hint_en     TEXT,
+  hint_ja     TEXT,
   sort_order  INTEGER NOT NULL DEFAULT 0,
   is_active   INTEGER NOT NULL DEFAULT 1
 );
@@ -48,6 +50,7 @@ CREATE TABLE IF NOT EXISTS certifications (
   name        TEXT NOT NULL,
   description_tr TEXT,
   description_en TEXT,
+  description_ja TEXT,
   sort_order  INTEGER NOT NULL DEFAULT 0,
   is_active   INTEGER NOT NULL DEFAULT 1
 );
@@ -57,6 +60,7 @@ CREATE TABLE IF NOT EXISTS sectors (
   code        TEXT NOT NULL UNIQUE,
   name_tr     TEXT NOT NULL,
   name_en     TEXT NOT NULL,
+  name_ja     TEXT,
   sort_order  INTEGER NOT NULL DEFAULT 0,
   is_active   INTEGER NOT NULL DEFAULT 1
 );
@@ -97,6 +101,9 @@ CREATE TABLE IF NOT EXISTS applications (
   references_text  TEXT,
   about            TEXT,
   category_other   TEXT,
+
+  -- Başvurunun yapıldığı dil — tedarikçiye giden e-postalar bu dilde yazılır.
+  lang             TEXT NOT NULL DEFAULT 'tr' CHECK (lang IN ('tr','en','ja')),
 
   -- KVKK / GDPR kaydı (rıza metninin sürümü ve kanıtı ile birlikte)
   kvkk_consent     INTEGER NOT NULL DEFAULT 0,
@@ -281,6 +288,9 @@ CREATE TABLE IF NOT EXISTS suppliers (
   otd_percent     REAL,                      -- zamanında teslimat (Faz 4 performans)
   ppm             REAL,                      -- kalite hata oranı
   notes           TEXT,
+
+  -- Yazışma dili — başvurudan devralınır, tedarikçiye giden e-postalarda kullanılır.
+  lang            TEXT NOT NULL DEFAULT 'tr',
 
   -- Tedarikçi portalı girişi: parolayı tedarikçi kendisi belirler
   -- (onay e-postasındaki bağlantıyla). Parola yoksa henüz giriş açılmamıştır.

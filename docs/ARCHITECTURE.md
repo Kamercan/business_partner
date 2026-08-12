@@ -130,3 +130,27 @@ denetim izine yazılır.
   (`POST /api/admin/contracts/scan-expiring`); bir cron ile gecelik çalıştırılabilir.
 - **Denetim şablonu çeşitlendirme**: `audit_templates` çoklu şablonu destekler; ürün grubuna
   özel kontrol listeleri eklenebilir.
+
+---
+
+## Çok dillilik
+
+Tedarikçiye dönük yüzey üç dillidir (TR / EN / JA); yönetim paneli Türkçedir.
+
+| Katman | Nerede | Not |
+|---|---|---|
+| Arayüz metinleri | `web/src/i18n/index.tsx` | Anahtar bazlı sözlük; üç dil yan yana, eksik dil derleme hatası |
+| Durum/rol etiketleri | `web/src/lib/labels.ts` | Panel ve portal ortak kullanır |
+| Referans veriler | `categories`, `sectors`, `certifications` tabloları | `name_ja` / `hint_ja` / `description_ja` sütunları; boşsa EN, o da yoksa TR |
+| E-posta şablonları | `server/src/lib/mailText.ts` | Tedarikçiye giden bildirimler; ekip bildirimleri Türkçe |
+| Sunucu mesajları | `server/src/lib/uiText.ts` | İstek `X-Lang` başlığıyla dil bildirir |
+
+**Dil, kaydın kendisinde taşınır.** Başvuru hangi dilde yapıldıysa
+`applications.lang` alanına yazılır; onaylandığında `suppliers.lang`'e devrolur.
+Böylece bildirimin dili, e-postayı tetikleyen Yanmar çalışanının tarayıcı diline
+değil, tedarikçinin başvurduğu dile bağlıdır — aylar sonra açılan bir uygunsuzluk
+raporu da doğru dilde gider.
+
+Yeni bir dil eklemek üç adımdır: `Lang` tipine kodu eklemek, sözlüklerdeki
+eksik alanları doldurmak (derleyici hepsini tek tek gösterir) ve referans
+tablolara `name_<kod>` sütununu eklemek.

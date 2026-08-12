@@ -4,7 +4,7 @@ import { ApiError, api } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Loading } from '../../components/ui';
 import { useI18n } from '../../i18n';
-import { APPLICATION_STATUS, formatDate, label, tone } from '../../lib/labels';
+import { APPLICATION_STATUS, ROLE, formatDate, label, tone } from '../../lib/labels';
 import { supplierToken, type SupplierSession } from '../../auth/supplierSession';
 import ApplicationForm, { type Meta } from './ApplicationForm';
 import { LangToggle, YanmarLogo } from './PublicShell';
@@ -24,12 +24,7 @@ type TrackResult = {
   messages: Array<{ body: string; created_at: string }>;
 };
 
-const STEPS = [
-  { tr: 'Başvuru alındı', en: 'Application received' },
-  { tr: 'Ön değerlendirme', en: 'Pre-evaluation' },
-  { tr: 'Kalite denetimi', en: 'Quality audit' },
-  { tr: 'Onaylı tedarikçi', en: 'Approved supplier' },
-];
+const STEPS = ['track.step.1', 'track.step.2', 'track.step.3', 'track.step.4'] as const;
 
 function stepIndexFor(status: string): number {
   if (status === 'NEW') return 0;
@@ -125,7 +120,7 @@ export default function BusinessPartner() {
       supplierToken.set(data.token);
       navigate('/tedarikci');
     } catch (err) {
-      setSpError(err instanceof ApiError ? err.message : 'Giriş yapılamadı.');
+      setSpError(err instanceof ApiError ? err.message : t('gate.err.login'));
     } finally {
       setSpBusy(false);
     }
@@ -133,7 +128,7 @@ export default function BusinessPartner() {
 
   async function supplierForgot() {
     if (!spEmail.trim()) {
-      setSpError('Önce e-posta adresinizi yazın.');
+      setSpError(t('gate.err.email.first'));
       return;
     }
     setSpBusy(true);
@@ -142,7 +137,7 @@ export default function BusinessPartner() {
       const res = await api.post<{ message: string }>('/supplier/forgot-password', { email: spEmail.trim() });
       setForgotSent(res.message);
     } catch (err) {
-      setSpError(err instanceof ApiError ? err.message : 'İşlem başarısız.');
+      setSpError(err instanceof ApiError ? err.message : t('gate.err.failed'));
     } finally {
       setSpBusy(false);
     }
@@ -156,7 +151,7 @@ export default function BusinessPartner() {
       await login(email, password);
       navigate('/yonetim');
     } catch (err) {
-      setLoginError(err instanceof ApiError ? err.message : 'Giriş yapılamadı.');
+      setLoginError(err instanceof ApiError ? err.message : t('gate.err.login'));
     } finally {
       setLoginBusy(false);
     }
@@ -187,29 +182,21 @@ export default function BusinessPartner() {
       </header>
 
       <main className="bp-gate-body">
-        <h1>{lang === 'tr' ? 'Business Partner Portalı' : 'Business Partner Portal'}</h1>
-        <p className="bp-gate-lead">
-          {lang === 'tr'
-            ? 'Tedarikçi başvuruları ve değerlendirme süreçleri için tek giriş noktası.'
-            : 'Single entry point for supplier applications and evaluation processes.'}
-        </p>
+        <h1>{t('gate.title')}</h1>
+        <p className="bp-gate-lead">{t('gate.lead')}</p>
 
         <div className="bp-choice bp-choice-3">
           <button type="button" className={`bp-choice-card ${side === 'supplier' ? 'on' : ''}`} onClick={() => pick('supplier')}>
-            <span className="bp-choice-title">{lang === 'tr' ? 'Başvuru yapmak istiyorum' : 'I want to apply'}</span>
-            <span className="bp-choice-sub">
-              {lang === 'tr' ? 'Yeni başvuru veya başvuru takibi' : 'New application or track an existing one'}
-            </span>
+            <span className="bp-choice-title">{t('gate.choice.apply')}</span>
+            <span className="bp-choice-sub">{t('gate.choice.apply.sub')}</span>
           </button>
           <button type="button" className={`bp-choice-card ${side === 'approved' ? 'on' : ''}`} onClick={() => pick('approved')}>
-            <span className="bp-choice-title">{lang === 'tr' ? 'Onaylı tedarikçiyim' : "I'm an approved supplier"}</span>
-            <span className="bp-choice-sub">
-              {lang === 'tr' ? 'Portala girin: belge, uygunsuzluk, sözleşme' : 'Sign in: documents, NCRs, contracts'}
-            </span>
+            <span className="bp-choice-title">{t('gate.choice.supplier')}</span>
+            <span className="bp-choice-sub">{t('gate.choice.supplier.sub')}</span>
           </button>
           <button type="button" className={`bp-choice-card ${side === 'team' ? 'on' : ''}`} onClick={() => pick('team')}>
-            <span className="bp-choice-title">{lang === 'tr' ? 'Yanmar ekibiyim' : "I'm from the Yanmar team"}</span>
-            <span className="bp-choice-sub">{lang === 'tr' ? 'Yönetim paneline giriş yapın' : 'Sign in to the admin panel'}</span>
+            <span className="bp-choice-title">{t('gate.choice.team')}</span>
+            <span className="bp-choice-sub">{t('gate.choice.team.sub')}</span>
           </button>
         </div>
 
@@ -218,28 +205,20 @@ export default function BusinessPartner() {
           <div className="bp-panel">
             <div className="bp-action">
               <div>
-                <h2>{lang === 'tr' ? 'Yeni başvuru' : 'New application'}</h2>
-                <p>
-                  {lang === 'tr'
-                    ? 'Firma bilgileriniz, üretim yetkinlikleriniz ve kalite belgelerinizle tedarikçi havuzumuza başvurun. Yaklaşık 5 dakika sürer.'
-                    : 'Apply to our supplier pool with your company details, capabilities and quality certificates. Takes about 5 minutes.'}
-                </p>
+                <h2>{t('gate.new.title')}</h2>
+                <p>{t('gate.new.body')}</p>
               </div>
               <button className="btn btn-primary" type="button" onClick={() => setFormOpen(true)} disabled={!meta}>
-                {lang === 'tr' ? 'Başvuru formunu aç' : 'Open application form'}
+                {t('gate.new.btn')}
               </button>
             </div>
 
-            <div className="bp-sep">{lang === 'tr' ? 'veya' : 'or'}</div>
+            <div className="bp-sep">{t('gate.or')}</div>
 
             <div className="bp-action bp-action-col">
               <div>
-                <h2>{lang === 'tr' ? 'Başvurumu takip et' : 'Track my application'}</h2>
-                <p>
-                  {lang === 'tr'
-                    ? 'Daha önce başvurduysanız referans numaranız ve e-posta adresinizle durumunuzu görebilirsiniz.'
-                    : 'If you applied before, check your status with your reference number and email.'}
-                </p>
+                <h2>{t('gate.track.title')}</h2>
+                <p>{t('gate.track.body')}</p>
               </div>
 
               <form
@@ -279,14 +258,14 @@ export default function BusinessPartner() {
                     {STEPS.map((step, i) => {
                       const state = rejected && i >= activeStep ? 'rejected' : i < activeStep ? 'done' : i === activeStep ? 'current' : '';
                       return (
-                        <div className={`status-step ${state}`} key={step.tr}>
+                        <div className={`status-step ${state}`} key={step}>
                           <div className="status-dot">{i < activeStep ? '✓' : i + 1}</div>
                           <div>
-                            <h4>{lang === 'tr' ? step.tr : step.en}</h4>
+                            <h4>{t(step)}</h4>
                             {i === activeStep && (
                               <p>
                                 {label(APPLICATION_STATUS, result.status, lang)}
-                                {result.audit?.planned_date && i === 2 && ` · ${formatDate(result.audit.planned_date)}`}
+                                {result.audit?.planned_date && i === 2 && ` · ${formatDate(result.audit.planned_date, false, lang)}`}
                               </p>
                             )}
                           </div>
@@ -297,10 +276,10 @@ export default function BusinessPartner() {
 
                   <div className="row wrap small muted" style={{ marginTop: 16, gap: 20 }}>
                     <span>
-                      {t('track.submitted')}: <strong>{formatDate(result.created_at)}</strong>
+                      {t('track.submitted')}: <strong>{formatDate(result.created_at, false, lang)}</strong>
                     </span>
                     <span>
-                      {t('track.updated')}: <strong>{formatDate(result.updated_at, true)}</strong>
+                      {t('track.updated')}: <strong>{formatDate(result.updated_at, true, lang)}</strong>
                     </span>
                   </div>
 
@@ -312,7 +291,7 @@ export default function BusinessPartner() {
                       {result.messages.map((m, i) => (
                         <div className="message-item" key={i}>
                           {m.body}
-                          <time>{formatDate(m.created_at, true)}</time>
+                          <time>{formatDate(m.created_at, true, lang)}</time>
                         </div>
                       ))}
                     </>
@@ -327,12 +306,8 @@ export default function BusinessPartner() {
         {side === 'approved' && (
           <div className="bp-panel">
             <div className="bp-login">
-              <h2>{lang === 'tr' ? 'Onaylı tedarikçi girişi' : 'Approved supplier sign-in'}</h2>
-              <p>
-                {lang === 'tr'
-                  ? 'Denetimden geçip onaylanan tedarikçilerimiz içindir. Parolanızı, onay e-postasındaki bağlantıdan kendiniz belirlersiniz.'
-                  : 'For suppliers who passed the audit. You set your own password via the link in the approval email.'}
-              </p>
+              <h2>{t('gate.supplier.title')}</h2>
+              <p>{t('gate.supplier.body')}</p>
 
               {spError && <div className="form-error" style={{ marginTop: 14 }}>{spError}</div>}
               {forgotSent && (
@@ -347,7 +322,7 @@ export default function BusinessPartner() {
                   <input type="email" value={spEmail} onChange={(e) => setSpEmail(e.target.value)} autoComplete="username" required />
                 </div>
                 <div className="field">
-                  <label>{lang === 'tr' ? 'Parola' : 'Password'}</label>
+                  <label>{t('f.password')}</label>
                   <input
                     type="password"
                     value={spPassword}
@@ -358,7 +333,7 @@ export default function BusinessPartner() {
                 </div>
                 <button className="btn btn-primary btn-block" type="submit" disabled={spBusy}>
                   {spBusy && <span className="spinner" />}
-                  {lang === 'tr' ? 'Giriş yap' : 'Sign in'}
+                  {t('btn.signin')}
                 </button>
               </form>
 
@@ -368,13 +343,13 @@ export default function BusinessPartner() {
                 onClick={supplierForgot}
                 disabled={spBusy}
               >
-                {lang === 'tr' ? 'Parolamı unuttum / henüz oluşturmadım' : 'Forgot password / not set yet'}
+                {t('gate.forgot')}
               </button>
 
               {demoMode && demoSuppliers.length > 0 && (
                 <div className="demo-accounts">
-                  <strong>{lang === 'tr' ? 'Demo tedarikçi hesapları' : 'Demo supplier accounts'}</strong>
-                  {lang === 'tr' ? ' — satıra tıklayın, alanlar dolsun' : ' — click a row to fill the fields'}
+                  <strong>{t('gate.demo.suppliers')}</strong>
+                  {t('gate.demo.hint')}
                   <div className="demo-list">
                     {demoSuppliers.map((d) => (
                       <button
@@ -394,11 +369,7 @@ export default function BusinessPartner() {
                       </button>
                     ))}
                   </div>
-                  <div className="demo-note">
-                    {lang === 'tr'
-                      ? 'Bu hesaplar yalnızca demo verisi içindir. Gerçek tedarikçiler parolalarını onay e-postasındaki bağlantıdan kendileri belirler; parolasını değiştiren tedarikçi bu listede görünmez.'
-                      : 'These accounts exist only in demo data. Real suppliers set their own password from the approval email; a supplier who changes it disappears from this list.'}
-                  </div>
+                  <div className="demo-note">{t('gate.demo.note')}</div>
                 </div>
               )}
             </div>
@@ -409,12 +380,8 @@ export default function BusinessPartner() {
         {side === 'team' && (
           <div className="bp-panel">
             <div className="bp-login">
-              <h2>{lang === 'tr' ? 'Yönetim paneli girişi' : 'Admin panel sign-in'}</h2>
-              <p>
-                {lang === 'tr'
-                  ? 'Satınalma ve Kalite ekipleri için. Tedarikçilerin giriş yapmasına gerek yoktur.'
-                  : 'For the Procurement and Quality teams. Suppliers do not need an account.'}
-              </p>
+              <h2>{t('gate.team.title')}</h2>
+              <p>{t('gate.team.body')}</p>
 
               {loginError && <div className="form-error">{loginError}</div>}
 
@@ -424,7 +391,7 @@ export default function BusinessPartner() {
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
                 </div>
                 <div className="field">
-                  <label>{lang === 'tr' ? 'Şifre' : 'Password'}</label>
+                  <label>{t('f.password')}</label>
                   <input
                     type="password"
                     value={password}
@@ -435,18 +402,19 @@ export default function BusinessPartner() {
                 </div>
                 <button className="btn btn-primary btn-block" type="submit" disabled={loginBusy}>
                   {loginBusy && <span className="spinner" />}
-                  {lang === 'tr' ? 'Giriş yap' : 'Sign in'}
+                  {t('btn.signin')}
                 </button>
               </form>
 
               {demoMode && (
                 <div className="demo-accounts">
-                  <strong>Demo hesapları</strong> — satıra tıklayın, alanlar dolsun
+                  <strong>{t('gate.demo.staff')}</strong>
+                  {t('gate.demo.hint')}
                   <div className="demo-list">
                     {[
-                      { role: 'Satınalma / Moderatör', email: 'satinalma@yanmar.com.tr', password: 'Moderator123!' },
-                      { role: 'Kalite Birimi', email: 'kalite@yanmar.com.tr', password: 'Kalite123!' },
-                      { role: 'İzleyici (salt okunur)', email: 'izleme@yanmar.com.tr', password: 'Viewer123!' },
+                      { role: 'MODERATOR', email: 'satinalma@yanmar.com.tr', password: 'Moderator123!' },
+                      { role: 'QUALITY', email: 'kalite@yanmar.com.tr', password: 'Kalite123!' },
+                      { role: 'VIEWER', email: 'izleme@yanmar.com.tr', password: 'Viewer123!' },
                     ].map((d) => (
                       <button
                         key={d.email}
@@ -458,7 +426,7 @@ export default function BusinessPartner() {
                           setLoginError(null);
                         }}
                       >
-                        <span className="demo-role">{d.role}</span>
+                        <span className="demo-role">{label(ROLE, d.role, lang)}</span>
                         <span className="demo-cred">
                           {d.email} <span className="demo-sep">/</span> {d.password}
                         </span>

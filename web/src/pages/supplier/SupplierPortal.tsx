@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { ApiError, api } from '../../api/client';
 import { Badge, FileSlot, Grade, Loading, Modal, useToast } from '../../components/ui';
 import { supplierToken } from '../../auth/supplierSession';
+import { useI18n } from '../../i18n';
 import {
   CONTRACT_STATUS,
   CONTRACT_TYPE,
@@ -16,8 +17,8 @@ import {
   label,
   tone,
 } from '../../lib/labels';
-import { MAIL_LINK_NOTE, extractLinks } from '../../lib/mailLinks';
-import { YanmarLogo } from '../public/PublicShell';
+import { extractLinks } from '../../lib/mailLinks';
+import { LangToggle, YanmarLogo } from '../public/PublicShell';
 
 type Me = {
   supplier: {
@@ -25,6 +26,8 @@ type Me = {
     contact_name: string | null; email: string; phone: string | null; grade: string | null; status: string;
     approved_at: string | null; next_audit_due: string | null; otd_percent: number | null; ppm: number | null;
     categories: string;
+    /** Ülkenin üç dildeki adı — ham kod yerine bu gösterilir. */
+    country_label: { name_tr: string; name_en: string; name_ja: string };
   };
   summary: { openNcrs: number; pendingResponse: number; activeContracts: number };
   messages: Array<{ body: string; created_at: string }>;
@@ -60,15 +63,16 @@ type Submission = {
 type Tab = 'ozet' | 'uygunsuzluk' | 'belge' | 'sozlesme' | 'yazisma';
 
 /** Tedarikçinin kendi gönderdiklerinin okunabilir başlıkları. */
-const SUBMISSION_LABEL: Record<string, string> = {
-  SUPPLIER_DOCUMENT_UPLOADED: 'Belge gönderdiniz',
-  STATUS_CHANGED: 'Düzeltici faaliyet planı gönderdiniz',
-};
+const SUBMISSION_LABEL = {
+  SUPPLIER_DOCUMENT_UPLOADED: 'sp.sub.doc',
+  STATUS_CHANGED: 'sp.sub.ncr',
+} as const;
 
 /** Onaylı tedarikçinin kendi alanı — parolayla giriş yaptıktan sonra. */
 export default function SupplierPortal() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { t, lang, pick } = useI18n();
 
   const [me, setMe] = useState<Me | null>(null);
   const [authFailed, setAuthFailed] = useState(false);
@@ -125,12 +129,12 @@ export default function SupplierPortal() {
       const body = new FormData();
       files.forEach((f) => body.append('files', f));
       await api.upload('/supplier/documents', body);
-      toast.push('Belgeleriniz yüklendi, Yanmar ekibine iletildi.', 'ok');
+      toast.push(t('sp.toast.uploaded'), 'ok');
       setFiles(null);
       setDocs(null);
       api.get<Doc[]>('/supplier/documents').then(setDocs).catch(() => undefined);
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Yükleme başarısız.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('sp.toast.upload.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -141,13 +145,13 @@ export default function SupplierPortal() {
     setBusy(true);
     try {
       await api.post(`/supplier/ncrs/${respondTo.id}/respond`, form);
-      toast.push('Düzeltici faaliyet planınız iletildi.', 'ok');
+      toast.push(t('sp.toast.ncr.sent'), 'ok');
       setRespondTo(null);
       setNcrs(null);
       api.get<Ncr[]>('/supplier/ncrs').then(setNcrs).catch(() => undefined);
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Gönderilemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('sp.toast.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -157,11 +161,11 @@ export default function SupplierPortal() {
     setBusy(true);
     try {
       await api.post('/supplier/change-password', pw);
-      toast.push('Parolanız güncellendi.', 'ok');
+      toast.push(t('sp.toast.pw.updated'), 'ok');
       setPwModal(false);
       setPw({ current_password: '', new_password: '' });
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Güncellenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('sp.toast.pw.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -175,41 +179,42 @@ export default function SupplierPortal() {
         <YanmarLogo />
         <div className="row">
           <span className="small muted nowrap">{s.company_name}</span>
+          <LangToggle />
           <button className="btn btn-sm" onClick={() => setPwModal(true)} type="button">
-            Parola
+            {t('sp.pw.btn')}
           </button>
           <button className="btn btn-sm" onClick={logout} type="button">
-            Çıkış
+            {t('sp.logout')}
           </button>
         </div>
       </header>
 
       <main className="bp-gate-body" style={{ maxWidth: 900 }}>
-        <h1>Tedarikçi Portalı</h1>
+        <h1>{t('sp.title')}</h1>
         <p className="bp-gate-lead">
-          {s.supplier_code} · {s.city ?? ''} {s.country.toUpperCase()}
+          {s.supplier_code} · {[s.city, pick(s.country_label)].filter(Boolean).join(', ')}
         </p>
 
         <div className="row wrap" style={{ gap: 10, marginBottom: 20 }}>
-          <Badge tone={tone(SUPPLIER_STATUS, s.status)}>{label(SUPPLIER_STATUS, s.status)}</Badge>
+          <Badge tone={tone(SUPPLIER_STATUS, s.status)}>{label(SUPPLIER_STATUS, s.status, lang)}</Badge>
           {s.grade && (
             <span className="row" style={{ gap: 6 }}>
-              <span className="small muted">Kalite notunuz:</span>
+              <span className="small muted">{t('sp.grade')}</span>
               <Grade grade={s.grade} />
             </span>
           )}
           {me.summary.pendingResponse > 0 && (
-            <Badge tone="danger">{me.summary.pendingResponse} uygunsuzluk cevabınızı bekliyor</Badge>
+            <Badge tone="danger">{t('sp.pending', { count: me.summary.pendingResponse })}</Badge>
           )}
         </div>
 
         <div className="tabs">
           {([
-            ['ozet', 'Özet'],
-            ['uygunsuzluk', `Uygunsuzluklar${me.summary.openNcrs ? ` (${me.summary.openNcrs})` : ''}`],
-            ['belge', 'Belgeler'],
-            ['sozlesme', `Sözleşmeler${me.summary.activeContracts ? ` (${me.summary.activeContracts})` : ''}`],
-            ['yazisma', 'Yazışmalar'],
+            ['ozet', t('sp.tab.summary')],
+            ['uygunsuzluk', `${t('sp.tab.ncr')}${me.summary.openNcrs ? ` (${me.summary.openNcrs})` : ''}`],
+            ['belge', t('sp.tab.docs')],
+            ['sozlesme', `${t('sp.tab.contracts')}${me.summary.activeContracts ? ` (${me.summary.activeContracts})` : ''}`],
+            ['yazisma', t('sp.tab.mail')],
           ] as Array<[Tab, string]>).map(([key, text]) => (
             <button key={key} type="button" className={`tab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
               {text}
@@ -221,30 +226,30 @@ export default function SupplierPortal() {
         {tab === 'ozet' && (
           <div className="bp-panel">
             <dl className="kv">
-              <dt>Firma</dt>
+              <dt>{t('sp.kv.company')}</dt>
               <dd>{s.company_name}</dd>
-              <dt>Tedarikçi kodu</dt>
+              <dt>{t('sp.kv.code')}</dt>
               <dd className="mono">{s.supplier_code}</dd>
-              <dt>Vergi no</dt>
+              <dt>{t('sp.kv.tax')}</dt>
               <dd className="mono">{s.tax_id}</dd>
-              <dt>Yetkili</dt>
+              <dt>{t('sp.kv.contact')}</dt>
               <dd>{s.contact_name ?? '—'}</dd>
-              <dt>E-posta</dt>
+              <dt>{t('f.email')}</dt>
               <dd>{s.email}</dd>
-              <dt>Onay tarihi</dt>
-              <dd>{formatDate(s.approved_at)}</dd>
-              <dt>Sonraki denetim</dt>
-              <dd>{formatDate(s.next_audit_due)}</dd>
-              <dt>Zamanında teslimat</dt>
-              <dd>{s.otd_percent !== null ? `%${s.otd_percent}` : '—'}</dd>
-              <dt>PPM</dt>
+              <dt>{t('sp.kv.approved')}</dt>
+              <dd>{formatDate(s.approved_at, false, lang)}</dd>
+              <dt>{t('sp.kv.next.audit')}</dt>
+              <dd>{formatDate(s.next_audit_due, false, lang)}</dd>
+              <dt>{t('sp.kv.otd')}</dt>
+              <dd>{s.otd_percent !== null ? `${s.otd_percent}%` : '—'}</dd>
+              <dt>{t('sp.kv.ppm')}</dt>
               <dd>{s.ppm ?? '—'}</dd>
             </dl>
 
             {me.messages.length > 0 && (
               <>
                 <div className="section-label" style={{ marginTop: 22 }}>
-                  Yanmar ekibinden mesajlar
+                  {t('sp.messages')}
                 </div>
                 {me.messages.map((m, i) => (
                   <div className="message-item" key={i}>
@@ -263,7 +268,7 @@ export default function SupplierPortal() {
             {!ncrs ? (
               <Loading />
             ) : ncrs.length === 0 ? (
-              <div className="empty">Firmanıza açılmış bir uygunsuzluk kaydı yok.</div>
+              <div className="empty">{t('sp.ncr.empty')}</div>
             ) : (
               ncrs.map((n) => (
                 <div key={n.id} className="sp-item">
@@ -273,27 +278,27 @@ export default function SupplierPortal() {
                       <strong style={{ fontSize: 15 }}>{n.title}</strong>
                     </div>
                     <div className="row wrap">
-                      <Badge tone={tone(NCR_SEVERITY, n.severity)}>{label(NCR_SEVERITY, n.severity)}</Badge>
-                      <Badge tone={tone(NCR_STATUS, n.status)}>{label(NCR_STATUS, n.status)}</Badge>
-                      {n.is_overdue === 1 && <Badge tone="danger">Termin geçti</Badge>}
+                      <Badge tone={tone(NCR_SEVERITY, n.severity)}>{label(NCR_SEVERITY, n.severity, lang)}</Badge>
+                      <Badge tone={tone(NCR_STATUS, n.status)}>{label(NCR_STATUS, n.status, lang)}</Badge>
+                      {n.is_overdue === 1 && <Badge tone="danger">{t('sp.ncr.overdue')}</Badge>}
                     </div>
                   </div>
 
                   <div className="message-item">{n.description}</div>
 
                   <div className="row wrap small muted" style={{ gap: 16, marginTop: 8 }}>
-                    <span>Kategori: {label(NCR_CATEGORY, n.category)}</span>
-                    {n.part_no && <span>Parça: {n.part_no}</span>}
-                    {n.qty_affected !== null && <span>Adet: {n.qty_affected}</span>}
-                    {n.due_date && <span>Son cevap: <strong>{formatDate(n.due_date)}</strong></span>}
+                    <span>{t('sp.ncr.category')}: {label(NCR_CATEGORY, n.category, lang)}</span>
+                    {n.part_no && <span>{t('sp.ncr.part')}: {n.part_no}</span>}
+                    {n.qty_affected !== null && <span>{t('sp.ncr.qty')}: {n.qty_affected}</span>}
+                    {n.due_date && <span>{t('sp.ncr.due')}: <strong>{formatDate(n.due_date, false, lang)}</strong></span>}
                   </div>
 
                   {n.root_cause && (
                     <div className="sp-answer">
-                      <div className="small muted">Gönderdiğiniz cevap</div>
-                      <div><strong>Kök neden:</strong> {n.root_cause}</div>
-                      <div><strong>Düzeltici faaliyet:</strong> {n.corrective_action}</div>
-                      {n.responded_at && <div className="small muted">{formatDate(n.responded_at, true)}</div>}
+                      <div className="small muted">{t('sp.ncr.answer')}</div>
+                      <div><strong>{t('sp.ncr.root')}:</strong> {n.root_cause}</div>
+                      <div><strong>{t('sp.ncr.corrective')}:</strong> {n.corrective_action}</div>
+                      {n.responded_at && <div className="small muted">{formatDate(n.responded_at, true, lang)}</div>}
                     </div>
                   )}
 
@@ -312,7 +317,7 @@ export default function SupplierPortal() {
                         });
                       }}
                     >
-                      {n.status === 'REJECTED' ? 'Cevabı yeniden gönder' : 'Düzeltici faaliyet gir (8D)'}
+                      {n.status === 'REJECTED' ? t('sp.ncr.resend') : t('sp.ncr.respond')}
                     </button>
                   )}
                 </div>
@@ -324,37 +329,37 @@ export default function SupplierPortal() {
         {/* ------------------------------ Belgeler ------------------------------ */}
         {tab === 'belge' && (
           <div className="bp-panel">
-            <div className="section-label">Belge yükle</div>
+            <div className="section-label">{t('sp.doc.upload')}</div>
             <FileSlot
-              title="Dosya seçin"
-              meta="PDF, Office belgeleri, görseller · max 20 MB"
+              title={t('sp.doc.pick')}
+              meta={t('sp.doc.meta')}
               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip"
               multiple
               file={files}
               onSelect={setFiles}
-              labels={{ required: 'Zorunlu', optional: 'Opsiyonel', remove: 'Kaldır' }}
+              labels={{ required: t('up.required'), optional: t('up.optional'), remove: t('up.remove') }}
             />
             <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={uploadDocs} disabled={!files?.length || busy} type="button">
               {busy && <span className="spinner" />}
-              Yükle
+              {t('btn.upload')}
             </button>
 
             <div className="section-label" style={{ marginTop: 26 }}>
-              Belgeler
+              {t('sp.doc.list')}
             </div>
             {!docs ? (
               <Loading />
             ) : docs.length === 0 ? (
-              <div className="empty">Henüz belge yok.</div>
+              <div className="empty">{t('sp.doc.empty')}</div>
             ) : (
               docs.map((d) => (
                 <div className={`doc-item ${d.uploaded_by_supplier ? 'supplier-doc' : ''}`} key={d.id}>
                   <div style={{ flex: 1 }}>
                     <div className="doc-name">{d.original_name}</div>
                     <div className="doc-meta">
-                      {formatBytes(d.size_bytes)} · {formatDate(d.created_at)}
+                      {formatBytes(d.size_bytes)} · {formatDate(d.created_at, false, lang)}
                       {d.related_no && ` · ${d.related_no}`}
-                      {d.uploaded_by_supplier ? ' · sizin yüklediğiniz' : ' · Yanmar paylaştı'}
+                      {` · ${d.uploaded_by_supplier ? t('sp.doc.mine') : t('sp.doc.theirs')}`}
                     </div>
                   </div>
                   <button
@@ -362,7 +367,7 @@ export default function SupplierPortal() {
                     type="button"
                     onClick={() => api.download(`/supplier/documents/${d.id}/download`, d.original_name).catch((e) => toast.push(e.message, 'error'))}
                   >
-                    İndir
+                    {t('btn.download')}
                   </button>
                 </div>
               ))
@@ -376,21 +381,21 @@ export default function SupplierPortal() {
             {!contracts ? (
               <Loading />
             ) : contracts.length === 0 ? (
-              <div className="empty">Kayıtlı sözleşme yok.</div>
+              <div className="empty">{t('sp.contract.empty')}</div>
             ) : (
               contracts.map((c) => (
                 <div className="row-between wrap sp-item" key={c.id}>
                   <div>
                     <strong style={{ fontSize: 14 }}>{c.title}</strong>
                     <div className="small muted">
-                      {c.contract_no} · {label(CONTRACT_TYPE, c.type)}
-                      {c.start_date && ` · ${formatDate(c.start_date)}`}
-                      {c.end_date && ` — ${formatDate(c.end_date)}`}
+                      {c.contract_no} · {label(CONTRACT_TYPE, c.type, lang)}
+                      {c.start_date && ` · ${formatDate(c.start_date, false, lang)}`}
+                      {c.end_date && ` — ${formatDate(c.end_date, false, lang)}`}
                     </div>
                   </div>
                   <div className="row">
-                    <span className="small muted">{formatMoney(c.value, c.currency)}</span>
-                    <Badge tone={tone(CONTRACT_STATUS, c.status)}>{label(CONTRACT_STATUS, c.status)}</Badge>
+                    <span className="small muted">{formatMoney(c.value, c.currency, lang)}</span>
+                    <Badge tone={tone(CONTRACT_STATUS, c.status)}>{label(CONTRACT_STATUS, c.status, lang)}</Badge>
                   </div>
                 </div>
               ))
@@ -403,8 +408,8 @@ export default function SupplierPortal() {
           <div className="bp-panel">
             <div className="tabs" style={{ marginTop: -4 }}>
               {([
-                ['gelen', 'Gelen'],
-                ['giden', 'Gönderilen'],
+                ['gelen', t('sp.box.in')],
+                ['giden', t('sp.box.out')],
               ] as Array<['gelen' | 'giden', string]>).map(([key, text]) => (
                 <button key={key} type="button" className={`tab ${box === key ? 'active' : ''}`} onClick={() => setBox(key)}>
                   {text}
@@ -415,25 +420,25 @@ export default function SupplierPortal() {
             {box === 'gelen' ? (
               <>
                 <p className="small muted" style={{ marginBottom: 12 }}>
-                  Yanmar'ın firmanıza gönderdiği bildirimler.
+                  {t('sp.box.in.hint')}
                 </p>
                 {!mails ? (
                   <Loading />
                 ) : mails.length === 0 ? (
-                  <div className="empty">Henüz bildirim yok.</div>
+                  <div className="empty">{t('sp.box.in.empty')}</div>
                 ) : (
                   mails.map((m) => (
                     <div className="row-between wrap sp-item" key={m.id}>
                       <div>
                         <strong style={{ fontSize: 14 }}>{m.subject}</strong>
-                        <div className="small muted">{formatDate(m.created_at, true)}</div>
+                        <div className="small muted">{formatDate(m.created_at, true, lang)}</div>
                       </div>
                       <button
                         className="btn btn-sm"
                         type="button"
                         onClick={() => api.get<Mail>(`/supplier/mails/${m.id}`).then(setMailPreview).catch(() => undefined)}
                       >
-                        Aç
+                        {t('btn.open')}
                       </button>
                     </div>
                   ))
@@ -442,18 +447,20 @@ export default function SupplierPortal() {
             ) : (
               <>
                 <p className="small muted" style={{ marginBottom: 12 }}>
-                  Portal üzerinden Yanmar'a gönderdikleriniz.
+                  {t('sp.box.out.hint')}
                 </p>
                 {!submissions ? (
                   <Loading />
                 ) : submissions.length === 0 ? (
-                  <div className="empty">Henüz bir gönderiminiz yok.</div>
+                  <div className="empty">{t('sp.box.out.empty')}</div>
                 ) : (
                   submissions.map((x) => (
                     <div className="sp-item" key={x.id}>
                       <div className="row-between wrap">
-                        <strong style={{ fontSize: 14 }}>{SUBMISSION_LABEL[x.action] ?? x.action}</strong>
-                        <span className="small muted">{formatDate(x.created_at, true)}</span>
+                        <strong style={{ fontSize: 14 }}>
+                          {x.action in SUBMISSION_LABEL ? t(SUBMISSION_LABEL[x.action as keyof typeof SUBMISSION_LABEL]) : x.action}
+                        </strong>
+                        <span className="small muted">{formatDate(x.created_at, true, lang)}</span>
                       </div>
                       <div className="small muted" style={{ marginTop: 4 }}>
                         {x.ncr_no && <span className="mono">{x.ncr_no} · </span>}
@@ -470,13 +477,13 @@ export default function SupplierPortal() {
 
       {/* --------------------------- Bildirim önizleme -------------------------- */}
       {mailPreview && (
-        <Modal title={mailPreview.subject} subtitle={formatDate(mailPreview.created_at, true)} onClose={() => setMailPreview(null)}>
+        <Modal title={mailPreview.subject} subtitle={formatDate(mailPreview.created_at, true, lang)} onClose={() => setMailPreview(null)}>
           {(() => {
             const links = mailPreview.body_html ? extractLinks(mailPreview.body_html) : [];
             return links.length > 0 ? (
               <div className="mail-links">
                 <div className="section-label" style={{ marginBottom: 8 }}>
-                  E-postadaki bağlantılar
+                  {t('mail.links.title')}
                 </div>
                 {links.map((l) => (
                   <a key={l.href} className="btn btn-sm" href={l.href} target="_blank" rel="noreferrer noopener">
@@ -484,13 +491,13 @@ export default function SupplierPortal() {
                   </a>
                 ))}
                 <div className="small muted" style={{ marginTop: 8, width: '100%' }}>
-                  {MAIL_LINK_NOTE}
+                  {t('mail.links.note')}
                 </div>
               </div>
             ) : null;
           })()}
           <iframe
-            title="E-posta önizleme"
+            title={t('mail.preview')}
             srcDoc={mailPreview.body_html}
             sandbox=""
             style={{ width: '100%', height: 420, border: '1px solid var(--line)', borderRadius: 6, background: '#fff' }}
@@ -501,7 +508,7 @@ export default function SupplierPortal() {
       {/* --------------------------- 8D cevap modalı --------------------------- */}
       {respondTo && (
         <Modal
-          title={`Düzeltici faaliyet — ${respondTo.ncr_no}`}
+          title={`${t('sp.ncr.modal')} — ${respondTo.ncr_no}`}
           subtitle={respondTo.title}
           onClose={() => setRespondTo(null)}
           footer={
@@ -509,7 +516,7 @@ export default function SupplierPortal() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setRespondTo(null)} type="button">
-                  Vazgeç
+                  {t('btn.give.up')}
                 </button>
                 <button
                   className="btn btn-primary"
@@ -517,7 +524,7 @@ export default function SupplierPortal() {
                   disabled={busy || form.root_cause.trim().length < 10 || form.corrective_action.trim().length < 10}
                   type="button"
                 >
-                  {busy && <span className="spinner" />} Gönder
+                  {busy && <span className="spinner" />} {t('btn.send')}
                 </button>
               </div>
             </>
@@ -525,24 +532,24 @@ export default function SupplierPortal() {
         >
           <div className="stack">
             <div className="field">
-              <label>Acil önlem (D3)</label>
-              <textarea rows={2} value={form.containment} onChange={(e) => setForm({ ...form, containment: e.target.value })} placeholder="Etkilenen ürünler için aldığınız acil önlemler..." />
+              <label>{t('sp.8d.containment')}</label>
+              <textarea rows={2} value={form.containment} onChange={(e) => setForm({ ...form, containment: e.target.value })} placeholder={t('sp.8d.containment.ph')} />
             </div>
             <div className="field">
               <label>
-                Kök neden analizi (D4) <span className="req">*</span>
+                {t('sp.8d.root')} <span className="req">*</span>
               </label>
-              <textarea rows={3} value={form.root_cause} onChange={(e) => setForm({ ...form, root_cause: e.target.value })} placeholder="5 neden / balık kılçığı analizi sonucu tespit edilen kök neden..." />
+              <textarea rows={3} value={form.root_cause} onChange={(e) => setForm({ ...form, root_cause: e.target.value })} placeholder={t('sp.8d.root.ph')} />
             </div>
             <div className="field">
               <label>
-                Düzeltici faaliyet (D5-D6) <span className="req">*</span>
+                {t('sp.8d.corrective')} <span className="req">*</span>
               </label>
-              <textarea rows={3} value={form.corrective_action} onChange={(e) => setForm({ ...form, corrective_action: e.target.value })} placeholder="Kök nedeni ortadan kaldıracak faaliyetler ve termin tarihleri..." />
+              <textarea rows={3} value={form.corrective_action} onChange={(e) => setForm({ ...form, corrective_action: e.target.value })} placeholder={t('sp.8d.corrective.ph')} />
             </div>
             <div className="field">
-              <label>Önleyici faaliyet (D7)</label>
-              <textarea rows={2} value={form.preventive_action} onChange={(e) => setForm({ ...form, preventive_action: e.target.value })} placeholder="Tekrarını önleyecek sistemsel iyileştirmeler..." />
+              <label>{t('sp.8d.preventive')}</label>
+              <textarea rows={2} value={form.preventive_action} onChange={(e) => setForm({ ...form, preventive_action: e.target.value })} placeholder={t('sp.8d.preventive.ph')} />
             </div>
           </div>
         </Modal>
@@ -551,7 +558,7 @@ export default function SupplierPortal() {
       {/* ---------------------------- Parola değiştir --------------------------- */}
       {pwModal && (
         <Modal
-          title="Parola değiştir"
+          title={t('sp.pw.title')}
           size="sm"
           onClose={() => setPwModal(false)}
           footer={
@@ -559,10 +566,10 @@ export default function SupplierPortal() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setPwModal(false)} type="button">
-                  Vazgeç
+                  {t('btn.give.up')}
                 </button>
                 <button className="btn btn-primary" onClick={changePassword} disabled={busy || pw.new_password.length < 8} type="button">
-                  {busy && <span className="spinner" />} Kaydet
+                  {busy && <span className="spinner" />} {t('btn.save')}
                 </button>
               </div>
             </>
@@ -570,13 +577,13 @@ export default function SupplierPortal() {
         >
           <div className="stack">
             <div className="field">
-              <label>Mevcut parola</label>
+              <label>{t('sp.pw.current')}</label>
               <input type="password" value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} />
             </div>
             <div className="field">
-              <label>Yeni parola</label>
+              <label>{t('sp.pw.new')}</label>
               <input type="password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} />
-              <span className="hint">En az 8 karakter, harf ve rakam içermeli.</span>
+              <span className="hint">{t('pw.rule')}</span>
             </div>
           </div>
         </Modal>

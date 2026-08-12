@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useI18n } from '../i18n';
 import { type BadgeTone, formatBytes } from '../lib/labels';
 
 /* ------------------------------- Bildirimler ------------------------------ */
@@ -134,6 +135,7 @@ export function ConfirmDialog({
   onCancel: () => void;
   busy?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <Modal
       title={title}
@@ -144,7 +146,7 @@ export function ConfirmDialog({
           <span />
           <div className="row">
             <button className="btn" onClick={onCancel} type="button">
-              Vazgeç
+              {t('btn.give.up')}
             </button>
             <button
               className={danger ? 'btn btn-danger' : 'btn btn-primary'}
@@ -303,18 +305,17 @@ export function Pagination({
   total: number;
   onChange: (page: number) => void;
 }) {
+  const { t } = useI18n();
   if (total === 0) return null;
   return (
     <div className="row-between pagination">
-      <span className="small muted">
-        Toplam <strong>{total}</strong> kayıt · sayfa {page}/{pageCount}
-      </span>
+      <span className="small muted">{t('ui.pagination', { total, page, pageCount })}</span>
       <div className="row">
         <button className="btn btn-sm" disabled={page <= 1} onClick={() => onChange(page - 1)} type="button">
-          ‹ Önceki
+          {t('ui.prev')}
         </button>
         <button className="btn btn-sm" disabled={page >= pageCount} onClick={() => onChange(page + 1)} type="button">
-          Sonraki ›
+          {t('ui.next')}
         </button>
       </div>
     </div>
@@ -323,10 +324,11 @@ export function Pagination({
 
 /* -------------------------------- Yardımcı -------------------------------- */
 
-export function Loading({ label = 'Yükleniyor...' }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const { t } = useI18n();
   return (
     <div className="empty">
-      <span className="spinner" /> <span style={{ marginLeft: 8 }}>{label}</span>
+      <span className="spinner" /> <span style={{ marginLeft: 8 }}>{label ?? t('ui.loading')}</span>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import nodemailer, { type Transporter } from 'nodemailer';
 import { config } from '../config.js';
 import { db } from '../db/index.js';
+import { mt, type MailLang } from './mailText.js';
 import { escapeHtml } from './text.js';
 
 let transporter: Transporter | null = null;
@@ -69,8 +70,12 @@ export async function sendMail(params: {
 
 const BRAND = '#E60012';
 
-/** Ortak e-posta gövdesi. */
-export function layout(title: string, bodyHtml: string, footer?: string): string {
+/**
+ * Ortak e-posta gövdesi. `footer` verilmezse altbilgi seçili dilde yazılır —
+ * tedarikçiye giden bildirimlerde gövde Japoncayken altbilginin Türkçe kalması
+ * bu sayede engellenir. Ekip bildirimlerinde dil verilmez, Türkçe kalır.
+ */
+export function layout(title: string, bodyHtml: string, footer?: string, lang: MailLang = 'tr'): string {
   return `<!doctype html>
 <html><body style="margin:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:24px 0;">
@@ -82,7 +87,7 @@ export function layout(title: string, bodyHtml: string, footer?: string): string
           ${bodyHtml}
         </td></tr>
         <tr><td style="padding:18px 28px;background:#fafafa;border-top:1px solid #eee;font-size:11px;color:#888;">
-          ${footer ?? 'Bu e-posta Yanmar Türkiye Business Partner Portalı tarafından otomatik olarak gönderilmiştir.'}
+          ${footer ?? mt(lang, 'footer')}
         </td></tr>
       </table>
     </td></tr>

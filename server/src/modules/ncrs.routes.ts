@@ -12,7 +12,7 @@ export const ncrRoutes = Router();
 ncrRoutes.use(requireAuth);
 
 const SELECT = `
-  SELECT n.*, s.company_name, s.supplier_code, s.email AS supplier_email,
+  SELECT n.*, s.company_name, s.supplier_code, s.email AS supplier_email, s.lang AS supplier_lang,
          uo.full_name AS opened_by_name, uc.full_name AS closed_by_name,
          (SELECT COUNT(*) FROM documents d WHERE d.owner_type = 'NCR' AND d.owner_id = n.id) AS document_count,
          CASE WHEN n.status NOT IN ('CLOSED','REJECTED') AND n.due_date IS NOT NULL AND date(n.due_date) < date('now')
@@ -117,8 +117,8 @@ ncrRoutes.post(
   requireRole('QUALITY', 'MODERATOR'),
   ah(async (req, res) => {
     const body = parse(createSchema, req.body);
-    const supplier = db.prepare('SELECT id, company_name, email FROM suppliers WHERE id = ?').get(body.supplier_id) as
-      | { id: number; company_name: string; email: string }
+    const supplier = db.prepare('SELECT id, company_name, email, lang FROM suppliers WHERE id = ?').get(body.supplier_id) as
+      | { id: number; company_name: string; email: string; lang: string }
       | undefined;
     if (!supplier) throw notFound('Tedarikçi bulunamadı.');
 
@@ -265,7 +265,7 @@ ncrRoutes.post(
     const ncr = db.prepare(`${SELECT} WHERE n.id = ?`).get(id) as
       | {
           id: number; ncr_no: string; title: string; severity: string; due_date: string | null;
-          description: string; company_name: string; supplier_email: string;
+          description: string; company_name: string; supplier_email: string; supplier_lang: string;
         }
       | undefined;
     if (!ncr) throw notFound('Uygunsuzluk raporu bulunamadı.');
@@ -276,7 +276,7 @@ ncrRoutes.post(
        VALUES (?, 'NCR_RESPONSE', 'NCR', ?, ?, datetime('now','+60 days'))`,
     ).run(sha256(token), id, ncr.supplier_email);
 
-    await notifyNcrOpened(ncr, { company_name: ncr.company_name, email: ncr.supplier_email }, token);
+    await notifyNcrOpened(ncr, { company_name: ncr.company_name, email: ncr.supplier_email, lang: ncr.supplier_lang }, token);
     logActivity({ entityType: 'NCR', entityId: id, action: 'LINK_RESENT', actor: actorOf(req) });
     res.json({ ok: true });
   }),

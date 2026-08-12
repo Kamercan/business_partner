@@ -55,6 +55,9 @@ const submitSchema = z.object({
   categories: z.array(z.string().trim().max(40)).min(1, 'En az bir ürün grubu seçiniz.').max(20),
   certifications: z.array(z.string().trim().max(40)).max(20).default([]),
 
+  /** Başvurunun yapıldığı dil — tedarikçiye giden e-postalar bu dilde yazılır. */
+  lang: z.enum(['tr', 'en', 'ja']).default('tr'),
+
   kvkk_consent: z.literal(true, { errorMap: () => ({ message: 'KVKK aydınlatma onayı zorunludur.' }) }),
   /** Bot tuzağı: gerçek kullanıcılar bu alanı doldurmaz. */
   website_url: z.string().max(0).optional(),
@@ -152,12 +155,12 @@ publicApplications.post(
           `INSERT INTO applications (
              ref_no, company_name, company_key, tax_id, founded_year, employee_band, revenue_band, website,
              sector, sector_other, contact_name, contact_position, email, phone, country, country_other, city, address,
-             references_text, about, category_other, kvkk_consent, consent_version, consent_ip, consent_at,
+             references_text, about, category_other, lang, kvkk_consent, consent_version, consent_ip, consent_at,
              status, source, completeness, duplicate_of, submit_ip, user_agent
            ) VALUES (
              @ref_no, @company_name, @company_key, @tax_id, @founded_year, @employee_band, @revenue_band, @website,
              @sector, @sector_other, @contact_name, @contact_position, @email, @phone, @country, @country_other, @city, @address,
-             @references_text, @about, @category_other, 1, @consent_version, @consent_ip, datetime('now'),
+             @references_text, @about, @category_other, @lang, 1, @consent_version, @consent_ip, datetime('now'),
              'NEW', 'WEB_FORM', 0, @duplicate_of, @submit_ip, @user_agent
            )`,
         )
@@ -183,6 +186,7 @@ publicApplications.post(
           references_text: body.references_text ?? null,
           about: body.about ?? null,
           category_other: body.category_other ?? null,
+          lang: body.lang,
           consent_version: CONSENT_VERSION,
           consent_ip: ip,
           duplicate_of: duplicate?.id ?? null,
@@ -263,6 +267,7 @@ publicApplications.post(
       company_name: body.company_name,
       email: body.email,
       contact_name: body.contact_name,
+      lang: body.lang,
     });
 
     res.status(201).json({
@@ -499,7 +504,7 @@ adminApplications.post(
       | {
           id: number; ref_no: string; company_name: string; email: string; contact_name: string;
           tax_id: string; country: string; city: string; website: string | null; phone: string;
-          status: ApplicationStatus;
+          status: ApplicationStatus; lang: string; country_other: string | null;
         }
       | undefined;
     if (!app) throw notFound('Başvuru bulunamadı.');
@@ -596,13 +601,19 @@ adminApplications.post(
           const created = db
             .prepare(
               `INSERT INTO suppliers (supplier_code, application_id, company_name, tax_id, country, city, website,
-                                      contact_name, email, phone, grade, status, approved_at, next_audit_due)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), date('now','+1 year'))`,
+                                      contact_name, email, phone, grade, status, lang, approved_at, next_audit_due)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), date('now','+1 year'))`,
             )
             .run(
-              nextSupplierCode(), id, app.company_name, app.tax_id, app.country, app.city, app.website,
+              nextSupplierCode(), id, app.company_name, app.tax_id,
+              // Ülke "diğer" ise kod yerine yazılan ülke adı saklanır; kaydın
+              // ekranda "OTHER" görünmesini engeller.
+              app.country === 'other' ? (app.country_other ?? 'other') : app.country,
+              app.city, app.website,
               app.contact_name, app.email, app.phone, lastAudit?.grade ?? null,
               lastAudit?.grade === 'C' ? 'CONDITIONAL' : 'APPROVED',
+              // Başvurunun dili tedarikçiye devrolur — sonraki e-postalar da o dilde.
+              app.lang,
             );
           supplierId = created.lastInsertRowid as number;
 
@@ -640,7 +651,7 @@ adminApplications.post(
          VALUES (?, 'SET_PASSWORD', 'SUPPLIER', ?, ?, datetime('now','+14 days'))`,
       ).run(sha256(token), result.supplierId, app.email);
       await notifyPortalInvite(
-        { id: result.supplierId, company_name: app.company_name, email: app.email },
+        { id: result.supplierId, company_name: app.company_name, email: app.email, lang: app.lang },
         token,
       );
     }
@@ -722,7 +733,7 @@ adminApplications.post(
     const id = Number(req.params.id);
     const body = parse(infoRequestSchema, req.body);
     const app = db.prepare('SELECT * FROM applications WHERE id = ?').get(id) as
-      | { id: number; ref_no: string; company_name: string; email: string; contact_name: string; status: ApplicationStatus }
+      | { id: number; ref_no: string; company_name: string; email: string; contact_name: string; status: ApplicationStatus; lang: string }
       | undefined;
     if (!app) throw notFound('Başvuru bulunamadı.');
 

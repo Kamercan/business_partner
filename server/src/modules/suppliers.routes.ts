@@ -278,8 +278,8 @@ supplierRoutes.post(
   requireRole('MODERATOR', 'QUALITY'),
   ah(async (req, res) => {
     const id = Number(req.params.id);
-    const supplier = db.prepare('SELECT id, company_name, email, status FROM suppliers WHERE id = ?').get(id) as
-      | { id: number; company_name: string; email: string; status: string }
+    const supplier = db.prepare('SELECT id, company_name, email, status, lang FROM suppliers WHERE id = ?').get(id) as
+      | { id: number; company_name: string; email: string; status: string; lang: string }
       | undefined;
     if (!supplier) throw notFound('Tedarikçi bulunamadı.');
     if (!['APPROVED', 'CONDITIONAL'].includes(supplier.status)) {

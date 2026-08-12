@@ -60,6 +60,31 @@ açıktır; parola hepsinde `Tedarikci123!`'tür ve hesaplar
 veriden gelir: parolasını kendisi değiştiren tedarikçi listeden düşer, böylece
 gerçek bir hesabın parolası hiçbir zaman gösterilmez.
 
+### Diller
+
+Tedarikçiye dönük her yüzey **Türkçe, İngilizce ve Japonca**dır: tanıtım sayfası,
+Business Partner kapısı, başvuru formu, başvuru takibi, parola belirleme ekranı,
+onaylı tedarikçi portalı ve süreli bağlantıyla açılan self-servis alan. Dil,
+sağ üstteki `TR / EN / 日本語` düğmesinden değişir ve tarayıcıda saklanır.
+
+Dil yalnızca ekranı değil, **süreci** de takip eder:
+
+| Ne | Nasıl davranır |
+|---|---|
+| Ürün grupları, sektörler, sertifikalar, ülkeler | Veritabanında üç dilde tutulur (`name_tr` / `name_en` / `name_ja`). Japoncası girilmemiş bir kayıt İngilizceye, o da yoksa Türkçeye düşer. |
+| Durum, rol, uygunsuzluk ve sözleşme etiketleri | `web/src/lib/labels.ts` içinde üç dilde |
+| Tarih, sayı ve para biçimi | Seçili dilin yerel biçimiyle (`tr-TR` / `en-GB` / `ja-JP`) |
+| **Tedarikçiye giden e-postalar** | Başvurunun yapıldığı dilde yazılır. Dil `applications.lang` alanında saklanır, onaydan sonra `suppliers.lang`'e devrolur — yani Japonca başvuran firma, aylar sonra gelen uygunsuzluk bildirimini de Japonca alır. |
+| Sunucu hata mesajları | Arayüz her istekte `X-Lang` başlığı gönderir; tedarikçinin görebileceği mesajlar o dilde döner. |
+
+Sözlükler anahtar bazında tutulur ve üç dil yan yana durur
+(`web/src/i18n/index.tsx`, `server/src/lib/mailText.ts`, `server/src/lib/uiText.ts`);
+bir dil eksik kalırsa **derleme hatası** verir, gözden kaçamaz.
+
+> **Yönetim paneli Türkçedir.** Yanmar Türkiye ekibinin iç aracı olduğu için
+> çevrilmemiştir; ortak durum etiketleri yine üç dillidir. Panelin de üç dilli
+> olması istenirse ayrıca ele alınmalıdır.
+
 ### Önemli adresler
 
 | Adres | Açıklama |
@@ -81,7 +106,7 @@ gerçek bir hesabın parolası hiçbir zaman gösterilmez.
 - Firma bilgileri, iletişim, **çoklu ürün grubu seçimi** (açıklama baloncuklarıyla),
   kalite sertifikaları, referanslar ve firma tanıtımı
 - **Gerçek dosya yükleme**: şirket sunumu, ürün kataloğu, ISO 9001, diğer sertifikalar, mali tablo
-- Tam **TR/EN** dil desteği
+- Tam **Türkçe / İngilizce / 日本語** dil desteği (aşağıya bakınız)
 - **KVKK onayı**, rıza metni sürümü, zaman damgası ve IP kaydı ile birlikte saklanır
 - Başvuru referans numarası üretimi (`YTM-BP-2026-00001`) ve otomatik onay e-postası
 
@@ -187,7 +212,7 @@ web/
     pages/public/  tanıtım sayfası, başvuru formu, takip, self-servis
     pages/admin/   pano, havuz, detaylar, denetim, SRM, sistem
     components/    ortak arayüz bileşenleri
-    i18n/          TR/EN sözlük
+    i18n/          TR/EN/JA sözlük
 docs/              mimari, iş akışı, API referansı
 ```
 

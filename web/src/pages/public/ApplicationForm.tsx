@@ -6,10 +6,14 @@ import { useI18n } from '../../i18n';
 import { LangToggle } from './PublicShell';
 
 export type Meta = {
-  categories: Array<{ code: string; name_tr: string; name_en: string; hint_tr: string | null; hint_en: string | null }>;
+  categories: Array<{
+    code: string;
+    name_tr: string; name_en: string; name_ja: string | null;
+    hint_tr: string | null; hint_en: string | null; hint_ja: string | null;
+  }>;
   certifications: Array<{ code: string; name: string }>;
-  sectors: Array<{ code: string; name_tr: string; name_en: string }>;
-  countries: Array<{ code: string; tr: string; en: string }>;
+  sectors: Array<{ code: string; name_tr: string; name_en: string; name_ja: string | null }>;
+  countries: Array<{ code: string; tr: string; en: string; ja: string }>;
   employeeBands: string[];
   revenueBands: string[];
 };
@@ -140,6 +144,8 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
     body.append('categories', JSON.stringify(categories));
     body.append('certifications', JSON.stringify(certifications));
     body.append('kvkk_consent', 'true');
+    // Başvuru hangi dilde yapıldıysa bildirim e-postaları da o dilde gider.
+    body.append('lang', lang);
     if (honeypot.current?.value) body.append('website_url', honeypot.current.value);
 
     Object.entries(files).forEach(([field, list]) => {
@@ -403,7 +409,7 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
               <option value="">{t('select.country')}</option>
               {meta.countries.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {lang === 'tr' ? c.tr : c.en}
+                  {c[lang]}
                 </option>
               ))}
             </select>
@@ -412,7 +418,7 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
             <label>
               {t('f.city')} <span className="req">*</span>
             </label>
-            <input name="city" autoComplete="address-level2" className={errors.city ? 'error' : ''} value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="İzmir" />
+            <input name="city" autoComplete="address-level2" className={errors.city ? 'error' : ''} value={form.city} onChange={(e) => set('city', e.target.value)} placeholder={t('f.city.ph')} />
           </div>
 
           <div className={`field-conditional ${otherCountry ? 'show' : ''}`}>

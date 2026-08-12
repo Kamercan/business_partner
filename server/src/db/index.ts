@@ -39,6 +39,14 @@ export function migrate(): void {
   addColumnIfMissing('mail_outbox', 'audience', "TEXT NOT NULL DEFAULT 'SUPPLIER'");
   backfillMailAudience();
 
+  // Japonca referans içerik (sonradan eklendi)
+  addColumnIfMissing('categories', 'name_ja', 'TEXT');
+  addColumnIfMissing('categories', 'hint_ja', 'TEXT');
+  addColumnIfMissing('certifications', 'description_ja', 'TEXT');
+  addColumnIfMissing('sectors', 'name_ja', 'TEXT');
+  addColumnIfMissing('applications', 'lang', "TEXT NOT NULL DEFAULT 'tr'");
+  addColumnIfMissing('suppliers', 'lang', "TEXT NOT NULL DEFAULT 'tr'");
+
   migratePortalTokenPurposes();
 }
 

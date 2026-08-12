@@ -10,8 +10,7 @@ export default function Landing() {
   return (
     <PublicShell onApply={goToGate}>
       <div className="demo-banner">
-        <strong>Business Partner</strong> · Yanmar Türkiye tedarikçi başvuru ve değerlendirme portalı — başvurmak için sağ
-        üstteki butonu kullanın.
+        <strong>{t('nav.bp')}</strong> · {t('home.banner')}
       </div>
 
       <section className="hero">

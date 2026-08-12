@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { useI18n } from '../../i18n';
+import { LANGS, useI18n } from '../../i18n';
 
 export function YanmarLogo({ compact }: { compact?: boolean }) {
   return (
@@ -17,12 +17,19 @@ export function LangToggle() {
   const { lang, setLang } = useI18n();
   return (
     <div className="lang-toggle">
-      <button type="button" className={lang === 'tr' ? 'active' : ''} onClick={() => setLang('tr')}>
-        TR
-      </button>
-      <button type="button" className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>
-        EN
-      </button>
+      {LANGS.map((l) => (
+        <button
+          key={l.code}
+          type="button"
+          title={l.label}
+          aria-label={l.label}
+          aria-pressed={lang === l.code}
+          className={lang === l.code ? 'active' : ''}
+          onClick={() => setLang(l.code)}
+        >
+          {l.short}
+        </button>
+      ))}
     </div>
   );
 }

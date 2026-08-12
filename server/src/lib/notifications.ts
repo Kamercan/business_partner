@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { button, keyValueTable, layout, sendMail } from './mailer.js';
+import { asMailLang, mt, type MailLang } from './mailText.js';
 import { escapeHtml } from './text.js';
 
 const trackUrl = (ref: string, email: string) =>
@@ -23,29 +24,31 @@ export async function notifyApplicationReceived(app: {
   company_name: string;
   email: string;
   contact_name: string;
+  lang?: string | null;
 }): Promise<void> {
+  const lang = asMailLang(app.lang);
   await sendMail({
     to: app.email,
-    subject: `Başvurunuz alındı — ${app.ref_no}`,
+    subject: mt(lang, 'received.subject', { ref: app.ref_no }),
     template: 'APPLICATION_RECEIVED',
     entityType: 'APPLICATION',
     entityId: app.id,
     html: layout(
-      'Başvurunuz alındı',
-      `<p style="font-size:14px;line-height:1.6;">Sayın ${escapeHtml(app.contact_name)},</p>
+      mt(lang, 'received.title'),
+      `<p style="font-size:14px;line-height:1.6;">${mt(lang, 'greeting.person', { name: escapeHtml(app.contact_name) })}</p>
        <p style="font-size:14px;line-height:1.6;">
-         <strong>${escapeHtml(app.company_name)}</strong> adına yaptığınız tedarikçi başvurusu sistemimize ulaşmıştır.
-         Başvurunuz Teknik Satınalma ve Kaynak Geliştirme ekibimiz tarafından değerlendirilecek ve
-         10 iş günü içinde tarafınıza dönüş yapılacaktır.
+         ${mt(lang, 'received.body', { company: escapeHtml(app.company_name) })}
        </p>
        ${keyValueTable([
-         ['Başvuru referans no', app.ref_no],
-         ['Firma', app.company_name],
+         [mt(lang, 'kv.ref'), app.ref_no],
+         [mt(lang, 'kv.company'), app.company_name],
        ])}
        <p style="font-size:13px;line-height:1.6;color:#555;">
-         Başvurunuzun güncel durumunu aşağıdaki bağlantıdan referans numaranız ve e-posta adresinizle takip edebilirsiniz.
+         ${mt(lang, 'received.track')}
        </p>
-       ${button(trackUrl(app.ref_no, app.email), 'Başvuru durumunu görüntüle')}`,
+       ${button(trackUrl(app.ref_no, app.email), mt(lang, 'btn.track'))}`,
+      undefined,
+      lang,
     ),
   });
 
@@ -72,88 +75,62 @@ export async function notifyApplicationReceived(app: {
 
 /** Faz 2/3 — Durum değişikliği bildirimi. */
 export async function notifyStatusChange(
-  app: { id: number; ref_no: string; company_name: string; email: string; contact_name: string },
+  app: { id: number; ref_no: string; company_name: string; email: string; contact_name: string; lang?: string | null },
   status: string,
   note?: string | null,
 ): Promise<void> {
-  const messages: Record<string, { subject: string; title: string; body: string }> = {
-    AUDIT_PENDING: {
-      subject: `Başvurunuz ön değerlendirmeyi geçti — ${app.ref_no}`,
-      title: 'Başvurunuz ön değerlendirmeyi geçti',
-      body: 'Başvurunuz Teknik Satınalma ekibimizin ön değerlendirmesini başarıyla geçmiştir. Sıradaki adım Kalite Güvence birimimizin tedarikçi denetimidir; denetim planlaması için kısa süre içinde sizinle iletişime geçilecektir.',
-    },
-    AUDIT_PLANNED: {
-      subject: `Tedarikçi denetiminiz planlandı — ${app.ref_no}`,
-      title: 'Tedarikçi denetiminiz planlandı',
-      body: 'Kalite Güvence birimimiz firmanız için bir denetim planlamıştır. Denetim tarihi ve kapsamı için ekibimiz sizinle iletişime geçecektir.',
-    },
-    APPROVED: {
-      subject: `Tebrikler — onaylı tedarikçi havuzumuza katıldınız (${app.ref_no})`,
-      title: 'Onaylı tedarikçi havuzumuza katıldınız',
-      body: 'Denetim süreciniz başarıyla tamamlanmıştır. Firmanız Yanmar Türkiye onaylı tedarikçi havuzuna eklenmiştir. Bundan sonra ilgili ürün gruplarındaki teklif (RFQ) süreçlerimize davet edileceksiniz.',
-    },
-    REJECTED: {
-      subject: `Başvurunuz hakkında — ${app.ref_no}`,
-      title: 'Başvurunuz hakkında',
-      body: 'Başvurunuzu değerlendirdik. Mevcut tedarik ihtiyaçlarımız ve değerlendirme kriterlerimiz doğrultusunda başvurunuz bu aşamada olumlu sonuçlanmamıştır. İlginiz için teşekkür ederiz; ihtiyaçlarımız değiştiğinde başvurunuz havuzumuzda değerlendirilmeye devam edecektir.',
-    },
-    DISQUALIFIED: {
-      subject: `Denetim sonucunuz hakkında — ${app.ref_no}`,
-      title: 'Denetim sonucunuz hakkında',
-      body: 'Gerçekleştirilen tedarikçi denetimi sonucunda firmanız bu aşamada onaylı tedarikçi kriterlerimizi karşılamamıştır. Denetim raporundaki iyileştirme alanlarını tamamladıktan sonra yeniden başvurabilirsiniz.',
-    },
-    ON_HOLD: {
-      subject: `Başvurunuz beklemeye alındı — ${app.ref_no}`,
-      title: 'Başvurunuz beklemeye alındı',
-      body: 'Başvurunuz kayıt altına alınmış olup, ilgili ürün grubunda tedarik ihtiyacı doğduğunda yeniden değerlendirilmek üzere havuzumuzda bekletilmektedir.',
-    },
-  };
+  /** Tedarikçiye bildirilen durumlar — diğerleri sessiz geçilir. */
+  const NOTIFIED = ['AUDIT_PENDING', 'AUDIT_PLANNED', 'APPROVED', 'REJECTED', 'DISQUALIFIED', 'ON_HOLD'] as const;
+  if (!(NOTIFIED as readonly string[]).includes(status)) return;
 
-  const m = messages[status];
-  if (!m) return;
+  const lang = asMailLang(app.lang);
+  const key = status as (typeof NOTIFIED)[number];
 
   await sendMail({
     to: app.email,
-    subject: m.subject,
+    subject: mt(lang, `status.${key}.subject`, { ref: app.ref_no }),
     template: `STATUS_${status}`,
     entityType: 'APPLICATION',
     entityId: app.id,
     html: layout(
-      m.title,
-      `<p style="font-size:14px;line-height:1.6;">Sayın ${escapeHtml(app.contact_name)},</p>
-       <p style="font-size:14px;line-height:1.6;">${escapeHtml(m.body)}</p>
-       ${note ? `<div style="background:#f7f7f7;border-left:3px solid #E60012;padding:12px 14px;margin:16px 0;font-size:13px;line-height:1.6;"><strong>Ek not:</strong><br>${escapeHtml(note)}</div>` : ''}
-       ${keyValueTable([['Başvuru referans no', app.ref_no], ['Firma', app.company_name]])}
-       ${button(trackUrl(app.ref_no, app.email), 'Başvuru durumunu görüntüle')}`,
+      mt(lang, `status.${key}.title`),
+      `<p style="font-size:14px;line-height:1.6;">${mt(lang, 'greeting.person', { name: escapeHtml(app.contact_name) })}</p>
+       <p style="font-size:14px;line-height:1.6;">${mt(lang, `status.${key}.body`)}</p>
+       ${note ? `<div style="background:#f7f7f7;border-left:3px solid #E60012;padding:12px 14px;margin:16px 0;font-size:13px;line-height:1.6;"><strong>${mt(lang, 'note.extra')}</strong><br>${escapeHtml(note)}</div>` : ''}
+       ${keyValueTable([[mt(lang, 'kv.ref'), app.ref_no], [mt(lang, 'kv.company'), app.company_name]])}
+       ${button(trackUrl(app.ref_no, app.email), mt(lang, 'btn.track'))}`,
+      undefined,
+      lang,
     ),
   });
 }
 
 /** Faz 2 — Eksik bilgi talebi (tek kullanımlık güvenli bağlantı ile). */
 export async function notifyInfoRequest(
-  app: { id: number; ref_no: string; company_name: string; email: string; contact_name: string },
+  app: { id: number; ref_no: string; company_name: string; email: string; contact_name: string; lang?: string | null },
   message: string,
   token: string,
 ): Promise<void> {
+  const lang = asMailLang(app.lang);
   await sendMail({
     to: app.email,
-    subject: `Başvurunuz için ek bilgi talebi — ${app.ref_no}`,
+    subject: mt(lang, 'info.subject', { ref: app.ref_no }),
     template: 'INFO_REQUEST',
     entityType: 'APPLICATION',
     entityId: app.id,
     html: layout(
-      'Ek bilgi / belge talebi',
-      `<p style="font-size:14px;line-height:1.6;">Sayın ${escapeHtml(app.contact_name)},</p>
+      mt(lang, 'info.title'),
+      `<p style="font-size:14px;line-height:1.6;">${mt(lang, 'greeting.person', { name: escapeHtml(app.contact_name) })}</p>
        <p style="font-size:14px;line-height:1.6;">
-         <strong>${escapeHtml(app.ref_no)}</strong> numaralı başvurunuzun değerlendirilebilmesi için
-         aşağıdaki bilgi ve belgelere ihtiyacımız bulunmaktadır:
+         ${mt(lang, 'info.body', { ref: escapeHtml(app.ref_no) })}
        </p>
        <div style="background:#fff5f5;border:1px solid #ffd0d4;border-radius:6px;padding:14px;margin:16px 0;font-size:13px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(message)}</div>
        <p style="font-size:13px;line-height:1.6;color:#555;">
-         Aşağıdaki güvenli bağlantı üzerinden belgelerinizi yükleyebilirsiniz. Bağlantı 30 gün geçerlidir ve
-         yalnızca sizin başvurunuza erişim sağlar.
+         ${mt(lang, 'info.link')}
        </p>
-       ${button(portalUrl(token), 'Belge yükle')}`,
+       ${button(portalUrl(token), mt(lang, 'info.btn'))}`,
+      undefined,
+      lang,
     ),
   });
 }
@@ -188,40 +165,37 @@ export async function notifyAuditAssigned(audit: {
  * `isReset` true ise parola sıfırlama metni kullanılır.
  */
 export async function notifyPortalInvite(
-  supplier: { id: number; company_name: string; email: string },
+  supplier: { id: number; company_name: string; email: string; lang?: string | null },
   token: string,
   isReset = false,
 ): Promise<void> {
+  const lang = asMailLang(supplier.lang);
   const url = `${config.publicBaseUrl}/tedarikci/parola/${token}`;
   await sendMail({
     to: supplier.email,
-    subject: isReset
-      ? 'Tedarikçi portalı — parola yenileme'
-      : 'Tedarikçi portalı erişiminiz hazır',
+    subject: mt(lang, isReset ? 'portal.reset.subject' : 'portal.invite.subject'),
     template: isReset ? 'PORTAL_RESET' : 'PORTAL_INVITE',
     entityType: 'SUPPLIER',
     entityId: supplier.id,
     html: layout(
-      isReset ? 'Parolanızı yenileyin' : 'Tedarikçi portalı erişiminiz hazır',
-      `<p style="font-size:14px;line-height:1.6;">Sayın yetkili (${escapeHtml(supplier.company_name)}),</p>
+      mt(lang, isReset ? 'portal.reset.title' : 'portal.invite.title'),
+      `<p style="font-size:14px;line-height:1.6;">${mt(lang, 'greeting.company', { company: escapeHtml(supplier.company_name) })}</p>
        <p style="font-size:14px;line-height:1.6;">
-         ${
-           isReset
-             ? 'Tedarikçi portalı parolanızı yenilemek için aşağıdaki bağlantıyı kullanabilirsiniz.'
-             : 'Firmanız Yanmar Türkiye onaylı tedarikçi havuzuna eklenmiştir. Tedarikçi portalına erişmek için aşağıdaki bağlantıdan <strong>kendi parolanızı belirleyin</strong>.'
-         }
+         ${mt(lang, isReset ? 'portal.reset.body' : 'portal.invite.body')}
        </p>
-       ${keyValueTable([['Giriş e-postası', supplier.email]])}
+       ${keyValueTable([[mt(lang, 'kv.login.email'), supplier.email]])}
        <p style="font-size:13px;line-height:1.6;color:#555;">
-         Portal üzerinden belge yükleyebilir, uygunsuzluk raporlarına düzeltici faaliyet cevabı
-         girebilir ve sözleşmelerinizi görüntüleyebilirsiniz.
+         ${mt(lang, 'portal.what')}
        </p>
-       ${button(url, isReset ? 'Parolamı yenile' : 'Parolamı oluştur')}
+       ${button(url, mt(lang, isReset ? 'portal.reset.btn' : 'portal.invite.btn'))}
        <p style="font-size:12px;color:#888;line-height:1.6;">
-         Bu bağlantı ${isReset ? '3 gün' : '14 gün'} geçerlidir ve yalnızca bir kez kullanılabilir.
-         Parolanızı oluşturduktan sonra portala
-         <a href="${config.publicBaseUrl}/business-partner?giris=tedarikci" style="color:#E60012;">buradan</a> girebilirsiniz.
+         ${mt(lang, 'portal.validity', {
+           days: mt(lang, isReset ? 'portal.days.3' : 'portal.days.14'),
+           url: `${config.publicBaseUrl}/business-partner?giris=tedarikci`,
+         })}
        </p>`,
+      undefined,
+      lang,
     ),
   });
 }
@@ -229,34 +203,43 @@ export async function notifyPortalInvite(
 /** Faz 4 — Tedarikçiye uygunsuzluk raporu bildirimi. */
 export async function notifyNcrOpened(
   ncr: { id: number; ncr_no: string; title: string; severity: string; due_date: string | null; description: string },
-  supplier: { company_name: string; email: string },
+  supplier: { company_name: string; email: string; lang?: string | null },
   token: string,
 ): Promise<void> {
-  const severityTr: Record<string, string> = { MINOR: 'Küçük', MAJOR: 'Büyük', CRITICAL: 'Kritik' };
+  const lang = asMailLang(supplier.lang);
+  const severity = severityLabel(lang, ncr.severity);
   await sendMail({
     to: supplier.email,
-    subject: `Uygunsuzluk raporu — ${ncr.ncr_no}`,
+    subject: mt(lang, 'ncr.subject', { no: ncr.ncr_no }),
     template: 'NCR_OPENED',
     entityType: 'NCR',
     entityId: ncr.id,
     html: layout(
-      'Uygunsuzluk raporu (NCR)',
-      `<p style="font-size:14px;line-height:1.6;">Sayın yetkili (${escapeHtml(supplier.company_name)}),</p>
+      mt(lang, 'ncr.title'),
+      `<p style="font-size:14px;line-height:1.6;">${mt(lang, 'greeting.company', { company: escapeHtml(supplier.company_name) })}</p>
        <p style="font-size:14px;line-height:1.6;">
-         Firmanıza ait bir ürün/süreç ile ilgili uygunsuzluk kaydı açılmıştır.
-         Aşağıdaki bağlantı üzerinden kök neden analizi ve düzeltici faaliyet planınızı (8D)
-         sisteme girmenizi rica ederiz.
+         ${mt(lang, 'ncr.body')}
        </p>
        ${keyValueTable([
-         ['Rapor no', ncr.ncr_no],
-         ['Konu', ncr.title],
-         ['Önem derecesi', severityTr[ncr.severity] ?? ncr.severity],
-         ['Son cevap tarihi', ncr.due_date ?? '-'],
+         [mt(lang, 'kv.ncr.no'), ncr.ncr_no],
+         [mt(lang, 'kv.ncr.subject'), ncr.title],
+         [mt(lang, 'kv.ncr.severity'), severity],
+         [mt(lang, 'kv.ncr.due'), ncr.due_date ?? '-'],
        ])}
        <div style="background:#f7f7f7;padding:12px 14px;margin:16px 0;font-size:13px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(ncr.description)}</div>
-       ${button(portalUrl(token), 'Uygunsuzluğu cevapla')}`,
+       ${button(portalUrl(token), mt(lang, 'ncr.btn'))}`,
+      undefined,
+      lang,
     ),
   });
+}
+
+/** Uygunsuzluk önem derecesinin seçili dildeki karşılığı. */
+function severityLabel(lang: MailLang, severity: string): string {
+  if (severity === 'MINOR' || severity === 'MAJOR' || severity === 'CRITICAL') {
+    return mt(lang, `severity.${severity}`);
+  }
+  return severity;
 }
 
 /** Faz 4 — Tedarikçi NCR cevabı girdiğinde kalite birimini uyar. */
