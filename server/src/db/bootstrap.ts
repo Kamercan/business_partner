@@ -465,7 +465,9 @@ export function seedDemo(): void {
 
     // Kalite denetimi gereken durumlar için denetim kaydı + görev üret
     if (['AUDIT_PENDING', 'AUDIT_PLANNED', 'AUDIT_DONE', 'APPROVED'].includes(d.status)) {
-      const auditNo = `DNT-${new Date(createdAt).getFullYear()}-${String(1000 + appId).slice(1)}`;
+      // Numaralandırma üretici ile aynı biçimde olmalı (5 hane), yoksa
+      // sıradaki numara hesabı demo veriyle çakışır.
+      const auditNo = `DNT-${new Date(createdAt).getFullYear()}-${String(appId).padStart(5, '0')}`;
       const auditStatus =
         d.status === 'AUDIT_PENDING' ? 'PENDING' : d.status === 'AUDIT_PLANNED' ? 'PLANNED' : 'COMPLETED';
       const completed = auditStatus === 'COMPLETED';
@@ -563,7 +565,7 @@ export function seedDemo(): void {
          VALUES (?, ?, ?, 'PRODUCT', 'MAJOR', ?, ?, ?, ?, ?, 'OPEN', ?, datetime('now','-9 days'), datetime('now','-9 days'))`,
       )
       .run(
-        `NCR-${new Date().getFullYear()}-0001`, firstSupplier.id,
+        `NCR-${new Date().getFullYear()}-00001`, firstSupplier.id,
         'Hidrolik silindir mil yüzeyinde çizik tespiti',
         'Gelen kalite kontrolde 40 adetlik partide 7 adet üründe mil yüzeyinde derin çizik tespit edilmiştir. Montaj hattında sızdırmazlık riski oluşturmaktadır.',
         'HYD-CYL-80-450', 7,
