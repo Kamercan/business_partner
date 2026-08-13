@@ -29,7 +29,7 @@ export default function Suppliers() {
   const [params, setParams] = useSearchParams();
   const toast = useToast();
   const meta = useMeta();
-  const { lang } = useI18n();
+  const { t, lang, pick } = useI18n();
   const [data, setData] = useState<{ rows: Row[]; total: number; page: number; pageCount: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -62,8 +62,8 @@ export default function Suppliers() {
   return (
     <>
       <TopBar
-        title="Onaylı Tedarikçiler"
-        subtitle="Denetimden geçmiş, teklif süreçlerine davet edilebilir firmalar"
+        title={t('su.title')}
+        subtitle={t('su.subtitle')}
         actions={
           <button
             className="btn"
@@ -73,9 +73,9 @@ export default function Suppliers() {
               setExporting(true);
               try {
                 await api.download(`/admin/suppliers/export${qs(query)}`, 'onayli-tedarikciler.xlsx');
-                toast.push('Excel dosyası indirildi.', 'ok');
+                toast.push(t('a.excel.ok'), 'ok');
               } catch (err) {
-                toast.push(err instanceof ApiError ? err.message : 'Dışa aktarım başarısız.', 'error');
+                toast.push(err instanceof ApiError ? err.message : t('a.excel.failed'), 'error');
               } finally {
                 setExporting(false);
               }
@@ -90,17 +90,17 @@ export default function Suppliers() {
         <div className="filters">
           <div className="filter-row">
             <div className="field grow">
-              <label>Arama</label>
+              <label>{t('a.search')}</label>
               <input
                 defaultValue={params.get('q') ?? ''}
-                placeholder="Firma adı, tedarikçi kodu, vergi no"
+                placeholder={t('su.search.ph')}
                 onKeyDown={(e) => e.key === 'Enter' && update({ q: (e.target as HTMLInputElement).value || undefined })}
               />
             </div>
             <div className="field">
-              <label>Kalite notu</label>
+              <label>{t('a.grade')}</label>
               <select value={params.get('grade') ?? ''} onChange={(e) => update({ grade: e.target.value || undefined })}>
-                <option value="">Tümü</option>
+                <option value="">{t('a.all')}</option>
                 {['A', 'B', 'C', 'D'].map((g) => (
                   <option key={g} value={g}>
                     {g}
@@ -109,12 +109,12 @@ export default function Suppliers() {
               </select>
             </div>
             <div className="field">
-              <label>Durum</label>
+              <label>{t('a.status')}</label>
               <select value={params.get('status') ?? ''} onChange={(e) => update({ status: e.target.value || undefined })}>
-                <option value="">Tümü</option>
+                <option value="">{t('a.all')}</option>
                 {Object.keys(SUPPLIER_STATUS).map((s) => (
                   <option key={s} value={s}>
-                    {label(SUPPLIER_STATUS, s)}
+                    {label(SUPPLIER_STATUS, s, lang)}
                   </option>
                 ))}
               </select>
@@ -123,7 +123,7 @@ export default function Suppliers() {
 
           <div style={{ marginTop: 12 }}>
             <div className="small muted" style={{ marginBottom: 5 }}>
-              Ürün grubu
+              {t('a.category')}
             </div>
             <div className="filter-chips">
               {meta?.categories.map((c) => (
@@ -133,7 +133,7 @@ export default function Suppliers() {
                   className={`filter-chip ${(params.get('category') ?? '').split(',').includes(c.code) ? 'on' : ''}`}
                   onClick={() => toggleCat(c.code)}
                 >
-                  {lang === 'tr' ? c.name_tr : c.name_en}
+                  {pick(c)}
                 </button>
               ))}
             </div>
@@ -144,22 +144,22 @@ export default function Suppliers() {
           {loading && !data ? (
             <Loading />
           ) : data && data.rows.length === 0 ? (
-            <EmptyState title="Onaylı tedarikçi yok" hint="Denetimi tamamlanan başvurular onaylandığında burada listelenir." />
+            <EmptyState title={t('su.empty')} hint={t('su.empty.hint')} />
           ) : (
             <>
               <div className="table-scroll">
                 <table className="data">
                   <thead>
                     <tr>
-                      <th>Tedarikçi</th>
-                      <th>Ürün grupları</th>
-                      <th>Not</th>
-                      <th>Durum</th>
-                      <th>OTD</th>
-                      <th>PPM</th>
-                      <th>Sözleşme</th>
-                      <th>Açık NCR</th>
-                      <th>Sonraki denetim</th>
+                      <th>{t('a.supplier')}</th>
+                      <th>{t('a.categories')}</th>
+                      <th>{t('a.note')}</th>
+                      <th>{t('a.status')}</th>
+                      <th>{t('su.otd.col')}</th>
+                      <th>{t('su.ppm.col')}</th>
+                      <th>{t('su.contract')}</th>
+                      <th>{t('su.open.ncr')}</th>
+                      <th>{t('su.next.audit')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -189,7 +189,7 @@ export default function Suppliers() {
                           <Grade grade={row.grade} />
                         </td>
                         <td className="tight">
-                          <Badge tone={tone(SUPPLIER_STATUS, row.status)}>{label(SUPPLIER_STATUS, row.status)}</Badge>
+                          <Badge tone={tone(SUPPLIER_STATUS, row.status)}>{label(SUPPLIER_STATUS, row.status, lang)}</Badge>
                         </td>
                         <td className="tight small">{row.otd_percent !== null ? `%${row.otd_percent}` : '—'}</td>
                         <td className="tight small">{row.ppm !== null ? row.ppm : '—'}</td>
@@ -201,7 +201,7 @@ export default function Suppliers() {
                             <span className="small muted">—</span>
                           )}
                         </td>
-                        <td className="tight small">{formatDate(row.next_audit_due)}</td>
+                        <td className="tight small">{formatDate(row.next_audit_due, false, lang)}</td>
                       </tr>
                     ))}
                   </tbody>

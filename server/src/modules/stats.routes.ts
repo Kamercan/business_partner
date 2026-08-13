@@ -25,7 +25,7 @@ statsRoutes.get(
 
     const byCategory = db
       .prepare(
-        `SELECT c.code, c.name_tr, c.name_en, COUNT(ac.application_id) AS count,
+        `SELECT c.code, c.name_tr, c.name_en, c.name_ja, COUNT(ac.application_id) AS count,
                 SUM(CASE WHEN a.status = 'APPROVED' THEN 1 ELSE 0 END) AS approved
            FROM categories c
            LEFT JOIN application_categories ac ON ac.category_code = c.code

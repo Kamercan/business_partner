@@ -10,7 +10,7 @@ import { TopBar } from './AdminLayout';
 type Stats = {
   totals: { total: number; last30: number; last7: number };
   byStatus: Array<{ status: string; count: number }>;
-  byCategory: Array<{ code: string; name_tr: string; name_en: string; count: number; approved: number }>;
+  byCategory: Array<{ code: string; name_tr: string; name_en: string; name_ja: string | null; count: number; approved: number }>;
   byCountry: Array<{ country: string; count: number }>;
   monthly: Array<{ month: string; count: number; approved: number }>;
   grades: Array<{ grade: string; count: number }>;
@@ -25,7 +25,7 @@ type Stats = {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { pick } = useI18n();
+  const { t, lang, pick } = useI18n();
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function Dashboard() {
   if (!stats) {
     return (
       <>
-        <TopBar title="Panom" />
+        <TopBar title={t('d.title')} />
         <div className="admin-content">
           <Loading />
         </div>
@@ -49,59 +49,66 @@ export default function Dashboard() {
 
   return (
     <>
-      <TopBar
-        title={`Merhaba, ${user?.full_name.split(' ')[0]}`}
-        subtitle="Tedarikçi başvuru havuzu ve yaşam döngüsü özeti"
-      />
+      <TopBar title={t('d.hello', { name: user?.full_name.split(' ')[0] ?? '' })} subtitle={t('d.subtitle')} />
       <div className="admin-content stack" style={{ gap: 16 }}>
         {/* KPI'lar */}
         <div className="kpi-grid">
           <div className="kpi accent">
-            <span className="kpi-label">Açık iş sıram</span>
+            <span className="kpi-label">{t('d.my.tasks')}</span>
             <span className="kpi-value">{stats.myTasks.open}</span>
             <span className="kpi-hint">
               {stats.myTasks.overdue > 0 ? (
-                <span style={{ color: 'var(--brand)' }}>{stats.myTasks.overdue} gecikmiş</span>
+                <span style={{ color: 'var(--brand)' }}>
+                  {stats.myTasks.overdue} {t('a.overdue')}
+                </span>
               ) : (
-                'gecikme yok'
+                t('d.no.overdue')
               )}{' '}
-              · <Link to="/yonetim/gorevler">aç</Link>
+              · <Link to="/yonetim/gorevler">{t('a.open')}</Link>
             </span>
           </div>
           <div className="kpi">
-            <span className="kpi-label">Değerlendirme bekleyen</span>
+            <span className="kpi-label">{t('d.pending.review')}</span>
             <span className="kpi-value">{pendingReview}</span>
             <span className="kpi-hint">
-              son 7 günde {stats.totals.last7} yeni başvuru · <Link to="/yonetim/basvurular?status=NEW,IN_REVIEW,NEEDS_INFO">aç</Link>
+              {t('d.last7', { count: stats.totals.last7 })} ·{' '}
+              <Link to="/yonetim/basvurular?status=NEW,IN_REVIEW,NEEDS_INFO">{t('a.open')}</Link>
             </span>
           </div>
           <div className="kpi warn">
-            <span className="kpi-label">Denetim sürecinde</span>
+            <span className="kpi-label">{t('d.in.audit')}</span>
             <span className="kpi-value">{inAudit}</span>
             <span className="kpi-hint">
-              {stats.auditQueue.pending} bekliyor · <Link to="/yonetim/denetimler">aç</Link>
+              {t('d.waiting', { count: stats.auditQueue.pending })} · <Link to="/yonetim/denetimler">{t('a.open')}</Link>
             </span>
           </div>
           <div className="kpi ok">
-            <span className="kpi-label">Onaylı tedarikçi</span>
+            <span className="kpi-label">{t('d.approved.suppliers')}</span>
             <span className="kpi-value">{stats.suppliers.approved}</span>
             <span className="kpi-hint">
-              {stats.suppliers.conditional} şartlı · <Link to="/yonetim/tedarikciler">aç</Link>
+              {t('d.conditional', { count: stats.suppliers.conditional })} · <Link to="/yonetim/tedarikciler">{t('a.open')}</Link>
             </span>
           </div>
           <div className="kpi">
-            <span className="kpi-label">Açık uygunsuzluk</span>
+            <span className="kpi-label">{t('d.open.ncrs')}</span>
             <span className="kpi-value">{stats.ncrs.open}</span>
             <span className="kpi-hint">
-              {stats.ncrs.overdue > 0 ? <span style={{ color: 'var(--brand)' }}>{stats.ncrs.overdue} gecikmiş</span> : 'gecikme yok'} ·{' '}
-              <Link to="/yonetim/uygunsuzluklar">aç</Link>
+              {stats.ncrs.overdue > 0 ? (
+                <span style={{ color: 'var(--brand)' }}>
+                  {stats.ncrs.overdue} {t('a.overdue')}
+                </span>
+              ) : (
+                t('d.no.overdue')
+              )}{' '}
+              · <Link to="/yonetim/uygunsuzluklar">{t('a.open')}</Link>
             </span>
           </div>
           <div className="kpi">
-            <span className="kpi-label">Yenilenecek sözleşme</span>
+            <span className="kpi-label">{t('d.renewing')}</span>
             <span className="kpi-value">{stats.contracts.expiring}</span>
             <span className="kpi-hint">
-              {stats.contracts.active} yürürlükte · <Link to="/yonetim/sozlesmeler?expiring=true">aç</Link>
+              {t('d.active.contracts', { count: stats.contracts.active })} ·{' '}
+              <Link to="/yonetim/sozlesmeler?expiring=true">{t('a.open')}</Link>
             </span>
           </div>
         </div>
@@ -110,45 +117,49 @@ export default function Dashboard() {
           {/* Ürün grubu dağılımı — projenin ana ihtiyacı */}
           <div className="card">
             <div className="card-title">
-              Ürün grubuna göre başvurular
+              {t('d.by.category')}
               <Link className="small" to="/yonetim/basvurular">
-                tümünü gör →
+                {t('d.see.all')}
               </Link>
             </div>
             <BarChart
               data={stats.byCategory
                 .filter((c) => c.count > 0)
-                .map((c) => ({ label: pick(c), value: c.count, extra: c.approved ? `(${c.approved} onaylı)` : undefined }))}
+                .map((c) => ({
+                  label: pick(c),
+                  value: c.count,
+                  extra: c.approved ? t('d.approved.short', { count: c.approved }) : undefined,
+                }))}
             />
           </div>
 
           <div className="card">
-            <div className="card-title">Süreç durumu</div>
+            <div className="card-title">{t('d.by.status')}</div>
             <BarChart
               data={stats.byStatus
                 .sort((a, b) => b.count - a.count)
-                .map((s) => ({ label: label(APPLICATION_STATUS, s.status), value: s.count }))}
+                .map((s) => ({ label: label(APPLICATION_STATUS, s.status, lang), value: s.count }))}
             />
           </div>
         </div>
 
         <div className="panel-grid">
           <div className="card">
-            <div className="card-title">Aylık başvuru trendi</div>
+            <div className="card-title">{t('d.monthly')}</div>
             <TrendChart data={stats.monthly} />
             <div className="row small muted" style={{ gap: 16, marginTop: 8 }}>
               <span>
                 <span style={{ display: 'inline-block', width: 10, height: 10, background: 'var(--brand)', opacity: 0.22, borderRadius: 2 }} />{' '}
-                toplam
+                {t('d.total')}
               </span>
               <span>
-                <span style={{ display: 'inline-block', width: 10, height: 10, background: 'var(--brand)', borderRadius: 2 }} /> onaylanan
+                <span style={{ display: 'inline-block', width: 10, height: 10, background: 'var(--brand)', borderRadius: 2 }} /> {t('d.approved.word')}
               </span>
             </div>
           </div>
 
           <div className="card">
-            <div className="card-title">Kalite notu dağılımı</div>
+            <div className="card-title">{t('d.grades')}</div>
             <div className="row wrap" style={{ gap: 10 }}>
               {['A', 'B', 'C', 'D'].map((g) => (
                 <div key={g} className="row" style={{ gap: 6 }}>
@@ -159,10 +170,10 @@ export default function Dashboard() {
             </div>
             <div className="row wrap small muted" style={{ gap: 18, marginTop: 18 }}>
               <span>
-                Ort. ön değerlendirme: <strong>{stats.cycle.avgReviewDays ?? '—'} gün</strong>
+                {t('d.avg.review')} <strong>{t('d.days', { n: stats.cycle.avgReviewDays ?? '—' })}</strong>
               </span>
               <span>
-                Ort. denetim süresi: <strong>{stats.cycle.avgAuditDays ?? '—'} gün</strong>
+                {t('d.avg.audit')} <strong>{t('d.days', { n: stats.cycle.avgAuditDays ?? '—' })}</strong>
               </span>
             </div>
           </div>
@@ -171,15 +182,15 @@ export default function Dashboard() {
         {/* SLA ihlali yaklaşan başvurular */}
         {stats.needsAttention.length > 0 && (
           <div className="card">
-            <div className="card-title">Hedef süreyi aşan başvurular</div>
+            <div className="card-title">{t('d.needs.attention')}</div>
             <div className="table-scroll">
               <table className="data">
                 <thead>
                   <tr>
-                    <th>Referans</th>
-                    <th>Firma</th>
-                    <th>Durum</th>
-                    <th>Bekleme</th>
+                    <th>{t('a.reference')}</th>
+                    <th>{t('a.company')}</th>
+                    <th>{t('a.status')}</th>
+                    <th>{t('d.waiting.col')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -192,10 +203,10 @@ export default function Dashboard() {
                         </Link>
                       </td>
                       <td>
-                        <Badge tone={tone(APPLICATION_STATUS, a.status)}>{label(APPLICATION_STATUS, a.status)}</Badge>
+                        <Badge tone={tone(APPLICATION_STATUS, a.status)}>{label(APPLICATION_STATUS, a.status, lang)}</Badge>
                       </td>
                       <td className="tight" style={{ color: 'var(--brand)', fontWeight: 600 }}>
-                        {a.age_days} gün
+                        {t('d.days', { n: a.age_days })}
                       </td>
                     </tr>
                   ))}

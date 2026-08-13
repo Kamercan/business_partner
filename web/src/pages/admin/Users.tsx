@@ -3,6 +3,7 @@ import { ApiError, api } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Loading, Modal, useToast } from '../../components/ui';
 import { ROLE, formatDate, label, tone } from '../../lib/labels';
+import { useI18n } from '../../i18n';
 import { TopBar } from './AdminLayout';
 
 type User = {
@@ -20,6 +21,7 @@ type User = {
 const EMPTY = { email: '', full_name: '', role: 'MODERATOR', department: '', phone: '', password: '' };
 
 export default function Users() {
+  const { t, lang } = useI18n();
   const toast = useToast();
   const { user: me } = useAuth();
   const [rows, setRows] = useState<User[] | null>(null);
@@ -46,12 +48,12 @@ export default function Users() {
         phone: form.phone || undefined,
         password: form.password,
       });
-      toast.push('Kullanıcı oluşturuldu.', 'ok');
+      toast.push(t('us.created'), 'ok');
       setModal(false);
       setForm(EMPTY);
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Oluşturulamadı.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.create.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -63,18 +65,18 @@ export default function Users() {
       toast.push(message, 'ok');
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Güncellenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.update.failed'), 'error');
     }
   }
 
   return (
     <>
       <TopBar
-        title="Kullanıcılar"
-        subtitle="Panel erişimi olan ekip üyeleri ve rolleri"
+        title={t('us.title')}
+        subtitle={t('us.subtitle')}
         actions={
           <button className="btn btn-primary" onClick={() => setModal(true)} type="button">
-            + Yeni kullanıcı
+            {t('us.new')}
           </button>
         }
       />
@@ -88,12 +90,12 @@ export default function Users() {
               <table className="data">
                 <thead>
                   <tr>
-                    <th>Ad Soyad</th>
-                    <th>E-posta</th>
-                    <th>Rol</th>
-                    <th>Birim</th>
-                    <th>Son giriş</th>
-                    <th>Durum</th>
+                    <th>{t('us.name')}</th>
+                    <th>{t('a.email')}</th>
+                    <th>{t('us.role')}</th>
+                    <th>{t('us.unit')}</th>
+                    <th>{t('us.last.login')}</th>
+                    <th>{t('a.status')}</th>
                     <th />
                   </tr>
                 </thead>
@@ -111,32 +113,32 @@ export default function Users() {
                           style={{ width: 190, padding: '5px 8px', fontSize: 12 }}
                           value={u.role}
                           disabled={u.id === me?.id}
-                          onChange={(e) => patch(u.id, { role: e.target.value }, 'Rol güncellendi.')}
+                          onChange={(e) => patch(u.id, { role: e.target.value }, t('us.role.updated'))}
                         >
                           {Object.keys(ROLE).map((r) => (
                             <option key={r} value={r}>
-                              {label(ROLE, r)}
+                              {label(ROLE, r, lang)}
                             </option>
                           ))}
                         </select>
                       </td>
                       <td className="small">{u.department ?? '—'}</td>
-                      <td className="tight small">{formatDate(u.last_login_at, true)}</td>
+                      <td className="tight small">{formatDate(u.last_login_at, true, lang)}</td>
                       <td className="tight">
                         <Badge tone={u.is_active ? 'ok' : 'neutral'}>{u.is_active ? 'Aktif' : 'Pasif'}</Badge>
                       </td>
                       <td className="tight">
                         <div className="row">
                           <button className="btn btn-sm" type="button" onClick={() => setResetFor(u)}>
-                            Şifre
+                            {t('us.password')}
                           </button>
                           {u.id !== me?.id && (
                             <button
                               className="btn btn-sm"
                               type="button"
-                              onClick={() => patch(u.id, { is_active: !u.is_active }, u.is_active ? 'Kullanıcı pasifleştirildi.' : 'Kullanıcı aktifleştirildi.')}
+                              onClick={() => patch(u.id, { is_active: !u.is_active }, u.is_active ? t('us.deactivated') : t('us.activated'))}
                             >
-                              {u.is_active ? 'Pasifleştir' : 'Aktifleştir'}
+                              {u.is_active ? t('us.deactivate') : t('us.activate')}
                             </button>
                           )}
                         </div>
@@ -152,7 +154,7 @@ export default function Users() {
 
       {modal && (
         <Modal
-          title="Yeni kullanıcı"
+          title={t('us.new.title')}
           size="sm"
           onClose={() => setModal(false)}
           footer={
@@ -160,7 +162,7 @@ export default function Users() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setModal(false)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button
                   className="btn btn-primary"
@@ -168,7 +170,7 @@ export default function Users() {
                   disabled={busy || !form.email || form.full_name.length < 2 || form.password.length < 8}
                   type="button"
                 >
-                  {busy && <span className="spinner" />} Oluştur
+                  {busy && <span className="spinner" />} {t('co.create')}
                 </button>
               </div>
             </>
@@ -189,26 +191,26 @@ export default function Users() {
             </div>
             <div className="grid-2">
               <div className="field">
-                <label>Rol</label>
+                <label>{t('us.role')}</label>
                 <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                   {Object.keys(ROLE).map((r) => (
                     <option key={r} value={r}>
-                      {label(ROLE, r)}
+                      {label(ROLE, r, lang)}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="field">
-                <label>Birim</label>
+                <label>{t('us.unit')}</label>
                 <input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
               </div>
             </div>
             <div className="field">
               <label>
-                Geçici şifre <span className="req">*</span>
+                {t('us.temp.password')} <span className="req">*</span>
               </label>
               <input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-              <span className="hint">En az 8 karakter, harf ve rakam içermeli.</span>
+              <span className="hint">{t('se.password.rule')}</span>
             </div>
           </div>
         </Modal>
@@ -216,7 +218,7 @@ export default function Users() {
 
       {resetFor && (
         <Modal
-          title={`Şifre sıfırla — ${resetFor.full_name}`}
+          title={`${t('us.reset.password')} — ${resetFor.full_name}`}
           size="sm"
           onClose={() => {
             setResetFor(null);
@@ -227,13 +229,13 @@ export default function Users() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setResetFor(null)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button
                   className="btn btn-primary"
                   disabled={newPassword.length < 8}
                   onClick={async () => {
-                    await patch(resetFor.id, { password: newPassword }, 'Şifre güncellendi.');
+                    await patch(resetFor.id, { password: newPassword }, t('us.password.updated'));
                     setResetFor(null);
                     setNewPassword('');
                   }}
@@ -246,9 +248,9 @@ export default function Users() {
           }
         >
           <div className="field">
-            <label>Yeni şifre</label>
+            <label>{t('us.new.password')}</label>
             <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            <span className="hint">En az 8 karakter, harf ve rakam içermeli.</span>
+            <span className="hint">{t('se.password.rule')}</span>
           </div>
         </Modal>
       )}

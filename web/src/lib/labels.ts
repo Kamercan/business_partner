@@ -132,6 +132,60 @@ export const DOCUMENT_KIND: Record<string, LabelDef> = {
   OTHER: { tr: 'Diğer', en: 'Other', ja: 'その他', tone: 'neutral' },
 };
 
+/**
+ * Denetim izi (activity_log) hareket adları. Tüm detay ekranları aynı sözlüğü
+ * kullanır; sunucu yeni bir hareket türü yazarsa kodun kendisi gösterilir.
+ */
+export const ACTIVITY: Record<string, LabelDef> = {
+  SUBMITTED: { tr: 'Başvuru gönderildi', en: 'Application submitted', ja: '申請が送信されました', tone: 'neutral' },
+  CREATED: { tr: 'Oluşturuldu', en: 'Created', ja: '作成されました', tone: 'neutral' },
+  IMPORTED: { tr: 'İçe aktarıldı', en: 'Imported', ja: '取り込まれました', tone: 'neutral' },
+  STATUS_CHANGED: { tr: 'Durum değişti', en: 'Status changed', ja: 'ステータスが変更されました', tone: 'neutral' },
+  ASSIGNED: { tr: 'Sorumlu atandı', en: 'Owner assigned', ja: '担当者が割り当てられました', tone: 'neutral' },
+  PRIORITY_CHANGED: { tr: 'Öncelik değişti', en: 'Priority changed', ja: '優先度が変更されました', tone: 'neutral' },
+  NOTE_ADDED: { tr: 'Not eklendi', en: 'Note added', ja: 'メモが追加されました', tone: 'neutral' },
+  INFO_REQUESTED: { tr: 'Ek bilgi talep edildi', en: 'Information requested', ja: '追加情報を依頼しました', tone: 'neutral' },
+  DOCUMENT_UPLOADED: { tr: 'Belge yüklendi', en: 'Document uploaded', ja: '書類がアップロードされました', tone: 'neutral' },
+  DOCUMENT_DOWNLOADED: { tr: 'Belge indirildi', en: 'Document downloaded', ja: '書類がダウンロードされました', tone: 'neutral' },
+  DOCUMENT_VISIBILITY_CHANGED: {
+    tr: 'Belge görünürlüğü değişti', en: 'Document visibility changed', ja: '書類の公開範囲が変更されました', tone: 'neutral',
+  },
+  SUPPLIER_DOCUMENT_UPLOADED: {
+    tr: 'Tedarikçi belge yükledi', en: 'Supplier uploaded a document', ja: 'サプライヤーが書類を提出しました', tone: 'neutral',
+  },
+  SUPPLIER_MESSAGE: { tr: 'Tedarikçi mesaj gönderdi', en: 'Supplier sent a message', ja: 'サプライヤーからメッセージ', tone: 'neutral' },
+  DUPLICATE_FLAGGED: { tr: 'Mükerrer olarak işaretlendi', en: 'Flagged as duplicate', ja: '重複として記録されました', tone: 'neutral' },
+  TASK_STATUS_CHANGED: { tr: 'Görev durumu değişti', en: 'Task status changed', ja: 'タスクの状態が変わりました', tone: 'neutral' },
+  AUDIT_PLANNED: { tr: 'Denetim planlandı', en: 'Audit planned', ja: '監査が計画されました', tone: 'neutral' },
+  AUDIT_COMPLETED: { tr: 'Denetim tamamlandı', en: 'Audit completed', ja: '監査が完了しました', tone: 'neutral' },
+  SCORED: { tr: 'Puanlama yapıldı', en: 'Scored', ja: '採点されました', tone: 'neutral' },
+  LINK_RESENT: { tr: 'Bağlantı yeniden gönderildi', en: 'Link resent', ja: 'リンクを再送信しました', tone: 'neutral' },
+  PORTAL_LOGIN: { tr: 'Portala giriş yapıldı', en: 'Signed in to the portal', ja: 'ポータルにログインしました', tone: 'neutral' },
+  PORTAL_PASSWORD_SET: { tr: 'Portal parolası belirlendi', en: 'Portal password set', ja: 'ポータルのパスワードを設定しました', tone: 'neutral' },
+  PORTAL_PASSWORD_CHANGED: { tr: 'Portal parolası değişti', en: 'Portal password changed', ja: 'ポータルのパスワードを変更しました', tone: 'neutral' },
+  PORTAL_INVITED: { tr: 'Portal daveti gönderildi', en: 'Portal invitation sent', ja: 'ポータル招待を送信しました', tone: 'neutral' },
+  SETTING_CHANGED: { tr: 'Ayar değişti', en: 'Setting changed', ja: '設定が変更されました', tone: 'neutral' },
+  CATEGORY_SAVED: { tr: 'Ürün grubu kaydedildi', en: 'Product group saved', ja: '供給品目を保存しました', tone: 'neutral' },
+  CATEGORY_DEACTIVATED: { tr: 'Ürün grubu pasifleştirildi', en: 'Product group deactivated', ja: '供給品目を無効にしました', tone: 'neutral' },
+};
+
+/**
+ * Başvuru durumu değiştiren butonların metinleri. Hangi geçişin mümkün
+ * olduğunu sunucudaki durum makinesi söyler; buradaki sözlük yalnızca adlandırır.
+ */
+export const STATUS_ACTION: Record<string, LabelDef & { variant?: 'primary' | 'danger' }> = {
+  IN_REVIEW: { tr: 'İncelemeye al', en: 'Move to review', ja: '審査に進める', tone: 'neutral' },
+  AUDIT_PENDING: { tr: 'Onayla → Kaliteye gönder', en: 'Approve → send to quality', ja: '承認 → 品質部門へ', tone: 'neutral', variant: 'primary' },
+  APPROVED: { tr: 'Onaylı tedarikçi yap', en: 'Make an approved supplier', ja: '承認サプライヤーにする', tone: 'neutral', variant: 'primary' },
+  ON_HOLD: { tr: 'Beklemeye al', en: 'Put on hold', ja: '保留にする', tone: 'neutral' },
+  REJECTED: { tr: 'Reddet', en: 'Reject', ja: '不採用にする', tone: 'neutral', variant: 'danger' },
+  DISQUALIFIED: { tr: 'Ele', en: 'Disqualify', ja: '資格なしとする', tone: 'neutral', variant: 'danger' },
+  NEEDS_INFO: { tr: 'Bilgi bekleniyor işaretle', en: 'Mark as awaiting info', ja: '情報待ちにする', tone: 'neutral' },
+  AUDIT_PLANNED: { tr: 'Denetim planlandı', en: 'Audit planned', ja: '監査を計画済みにする', tone: 'neutral' },
+  AUDIT_IN_PROGRESS: { tr: 'Denetim başladı', en: 'Audit started', ja: '監査を開始する', tone: 'neutral' },
+  AUDIT_DONE: { tr: 'Denetim tamamlandı', en: 'Audit completed', ja: '監査を完了する', tone: 'neutral' },
+};
+
 /** Etiket sözlüğünden metin okur; bilinmeyen kodda kodun kendisini döner. */
 export function label(map: Record<string, LabelDef>, code: string | null | undefined, lang: Lang = 'tr'): string {
   if (!code) return '—';

@@ -62,10 +62,12 @@ gerçek bir hesabın parolası hiçbir zaman gösterilmez.
 
 ### Diller
 
-Tedarikçiye dönük her yüzey **Türkçe, İngilizce ve Japonca**dır: tanıtım sayfası,
-Business Partner kapısı, başvuru formu, başvuru takibi, parola belirleme ekranı,
-onaylı tedarikçi portalı ve süreli bağlantıyla açılan self-servis alan. Dil,
-sağ üstteki `TR / EN / 日本語` düğmesinden değişir ve tarayıcıda saklanır.
+Uygulamanın tamamı **Türkçe, İngilizce ve Japonca**dır — hem tedarikçiye dönük
+yüzey (tanıtım sayfası, Business Partner kapısı, başvuru formu, başvuru takibi,
+parola ekranı, onaylı tedarikçi portalı, süreli bağlantıyla açılan self-servis
+alan) hem de **yönetim panelinin tamamı**. Dil, sağ üstteki
+`TR / EN / 日本語` düğmesinden değişir ve tarayıcıda saklanır; panelde de aynı
+düğme sayfa başlığının yanındadır.
 
 Dil yalnızca ekranı değil, **süreci** de takip eder:
 
@@ -76,14 +78,16 @@ Dil yalnızca ekranı değil, **süreci** de takip eder:
 | Tarih, sayı ve para biçimi | Seçili dilin yerel biçimiyle (`tr-TR` / `en-GB` / `ja-JP`) |
 | **Tedarikçiye giden e-postalar** | Başvurunun yapıldığı dilde yazılır. Dil `applications.lang` alanında saklanır, onaydan sonra `suppliers.lang`'e devrolur — yani Japonca başvuran firma, aylar sonra gelen uygunsuzluk bildirimini de Japonca alır. |
 | Sunucu hata mesajları | Arayüz her istekte `X-Lang` başlığı gönderir; tedarikçinin görebileceği mesajlar o dilde döner. |
+| **İş sırasındaki görevler** | Görev başlığı "*görev türü seçili dilde*: *firma adı*" olarak kurulur, açıklama ise sunucunun verdiği çeviri anahtarından üretilir — yani görev Türkçe açılmış olsa bile Japonca panelde Japonca okunur. |
 
 Sözlükler anahtar bazında tutulur ve üç dil yan yana durur
-(`web/src/i18n/index.tsx`, `server/src/lib/mailText.ts`, `server/src/lib/uiText.ts`);
-bir dil eksik kalırsa **derleme hatası** verir, gözden kaçamaz.
+(`web/src/i18n/index.tsx` kamuya açık yüzey, `web/src/i18n/dict.admin.ts` yönetim
+paneli, `web/src/lib/labels.ts` durum etiketleri, `server/src/lib/mailText.ts`
+e-postalar, `server/src/lib/uiText.ts` sunucu mesajları); bir dil eksik kalırsa
+**derleme hatası** verir, gözden kaçamaz.
 
-> **Yönetim paneli Türkçedir.** Yanmar Türkiye ekibinin iç aracı olduğu için
-> çevrilmemiştir; ortak durum etiketleri yine üç dillidir. Panelin de üç dilli
-> olması istenirse ayrıca ele alınmalıdır.
+> Firma adları, kişi adları, serbest metin açıklamalar ve yüklenen dosya adları
+> **veridir** — girildikleri dilde kalır, çevrilmez.
 
 ### Önemli adresler
 

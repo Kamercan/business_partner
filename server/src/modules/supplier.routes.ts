@@ -349,6 +349,7 @@ supplierRoutes.post(
       type: 'REVIEW_DOCUMENT',
       title: `Tedarikçi belge yükledi: ${s.company_name}`,
       description: stored.map((f) => f.originalName).join(', '),
+      subject: s.company_name,
       entityType: 'SUPPLIER',
       entityId: s.id,
       assignedRole: 'MODERATOR',

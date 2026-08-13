@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { ApiError, api } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, FileSlot, Loading, useToast } from '../../components/ui';
-import { NCR_CATEGORY, NCR_SEVERITY, NCR_STATUS, formatBytes, formatDate, label, tone } from '../../lib/labels';
+import { ACTIVITY, NCR_CATEGORY, NCR_SEVERITY, NCR_STATUS, formatBytes, formatDate, label, tone } from '../../lib/labels';
+import { useI18n } from '../../i18n';
 import { TopBar } from './AdminLayout';
 
 type Ncr = {
@@ -37,6 +38,7 @@ type Ncr = {
 };
 
 export default function NcrDetail() {
+  const { t, lang } = useI18n();
   const { id } = useParams();
   const toast = useToast();
   const { can, readOnly } = useAuth();
@@ -54,7 +56,7 @@ export default function NcrDetail() {
         setData(d);
         setEffectiveness(d.effectiveness ?? '');
       })
-      .catch((err) => toast.push(err instanceof ApiError ? err.message : 'Yüklenemedi.', 'error'));
+      .catch((err) => toast.push(err instanceof ApiError ? err.message : t('a.load.failed'), 'error'));
   }, [id, toast]);
 
   useEffect(load, [load]);
@@ -62,7 +64,7 @@ export default function NcrDetail() {
   if (!data) {
     return (
       <>
-        <TopBar title="Uygunsuzluk" />
+        <TopBar title={t('nc.detail')} />
         <div className="admin-content">
           <Loading />
         </div>
@@ -77,7 +79,7 @@ export default function NcrDetail() {
       toast.push(message, 'ok');
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Güncellenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.update.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -109,10 +111,10 @@ export default function NcrDetail() {
       form.append('visibility', 'SHARED');
       await api.upload('/admin/documents', form);
       setFiles(null);
-      toast.push('Belge yüklendi.', 'ok');
+      toast.push(t('su.doc.uploaded'), 'ok');
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Yüklenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.load.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -132,7 +134,7 @@ export default function NcrDetail() {
               ← Uygunsuzluklar
             </Link>
             <Link className="btn btn-sm" to={`/yonetim/tedarikciler/${data.supplier_id}`}>
-              Tedarikçiyi aç
+              {t('nc.open.supplier')}
             </Link>
             {canEdit && data.status === 'OPEN' && (
               <button
@@ -141,19 +143,19 @@ export default function NcrDetail() {
                 onClick={async () => {
                   try {
                     await api.post(`/admin/ncrs/${id}/resend-link`);
-                    toast.push('Cevap bağlantısı tedarikçiye yeniden gönderildi.', 'ok');
+                    toast.push(t('nc.resent'), 'ok');
                     load();
                   } catch (err) {
-                    toast.push(err instanceof ApiError ? err.message : 'Gönderilemedi.', 'error');
+                    toast.push(err instanceof ApiError ? err.message : t('a.send.failed'), 'error');
                   }
                 }}
               >
-                Bağlantıyı yeniden gönder
+                {t('nc.resend')}
               </button>
             )}
             {canEdit && data.status === 'SUPPLIER_RESPONDED' && (
-              <button className="btn btn-sm" onClick={() => patch({ status: 'UNDER_REVIEW' }, 'İncelemeye alındı.')} disabled={busy} type="button">
-                İncelemeye al
+              <button className="btn btn-sm" onClick={() => patch({ status: 'UNDER_REVIEW' }, t('nc.reviewing'))} disabled={busy} type="button">
+                {t('nc.to.review')}
               </button>
             )}
             {canEdit && hasResponse && (
@@ -164,11 +166,11 @@ export default function NcrDetail() {
                   disabled={busy}
                   type="button"
                 >
-                  Cevabı reddet
+                  {t('nc.reject')}
                 </button>
                 <button
                   className="btn btn-sm btn-primary"
-                  onClick={() => patch({ status: 'CLOSED', effectiveness: effectiveness || undefined }, 'Uygunsuzluk kapatıldı.')}
+                  onClick={() => patch({ status: 'CLOSED', effectiveness: effectiveness || undefined }, t('nc.closed'))}
                   disabled={busy}
                   type="button"
                 >
@@ -183,16 +185,16 @@ export default function NcrDetail() {
       <div className="admin-content">
         <div className="detail-header">
           <div className="row wrap" style={{ gap: 10 }}>
-            <Badge tone={tone(NCR_STATUS, data.status)}>{label(NCR_STATUS, data.status)}</Badge>
-            <Badge tone={tone(NCR_SEVERITY, data.severity)}>{label(NCR_SEVERITY, data.severity)}</Badge>
-            <Badge tone="neutral">{label(NCR_CATEGORY, data.category)}</Badge>
-            {data.is_overdue === 1 && <Badge tone="danger">Termin geçti</Badge>}
+            <Badge tone={tone(NCR_STATUS, data.status)}>{label(NCR_STATUS, data.status, lang)}</Badge>
+            <Badge tone={tone(NCR_SEVERITY, data.severity)}>{label(NCR_SEVERITY, data.severity, lang)}</Badge>
+            <Badge tone="neutral">{label(NCR_CATEGORY, data.category, lang)}</Badge>
+            {data.is_overdue === 1 && <Badge tone="danger">{t('nc.overdue')}</Badge>}
             <span className="small muted">
-              Termin: <strong>{formatDate(data.due_date)}</strong>
+              {t('a.due')}: <strong>{formatDate(data.due_date, false, lang)}</strong>
             </span>
             {data.responded_at && (
               <span className="small muted">
-                Cevap: <strong>{formatDate(data.responded_at, true)}</strong>
+                {t('nc.answer')}: <strong>{formatDate(data.responded_at, true, lang)}</strong>
               </span>
             )}
           </div>
@@ -201,33 +203,33 @@ export default function NcrDetail() {
         <div className="detail-grid">
           <div className="stack">
             <div className="card">
-              <div className="card-title">Uygunsuzluk tanımı</div>
+              <div className="card-title">{t('nc.description')}</div>
               <div style={{ fontSize: 13.5, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{data.description}</div>
               <dl className="kv" style={{ marginTop: 16 }}>
-                <dt>Parça no</dt>
+                <dt>{t('nc.part')}</dt>
                 <dd>{data.part_no ?? '—'}</dd>
-                <dt>Etkilenen adet</dt>
+                <dt>{t('nc.affected')}</dt>
                 <dd>{data.qty_affected ?? '—'}</dd>
-                <dt>Tespit tarihi</dt>
-                <dd>{formatDate(data.detected_at)}</dd>
-                <dt>Açan</dt>
+                <dt>{t('nc.detected.date')}</dt>
+                <dd>{formatDate(data.detected_at, false, lang)}</dd>
+                <dt>{t('nc.opened.by')}</dt>
                 <dd>{data.opened_by_name ?? '—'}</dd>
               </dl>
             </div>
 
             <div className="card">
-              <div className="card-title">Tedarikçi düzeltici faaliyet cevabı (8D)</div>
+              <div className="card-title">{t('nc.response')}</div>
               {!hasResponse && !data.containment ? (
                 <div className="small muted">
-                  Tedarikçiden henüz cevap alınmadı. Cevap, e-postayla gönderilen güvenli bağlantı üzerinden girildiğinde burada görünür.
+                  {t('nc.no.response')}
                 </div>
               ) : (
                 <>
                   {[
-                    ['Acil önlem (D3)', data.containment],
-                    ['Kök neden analizi (D4)', data.root_cause],
-                    ['Düzeltici faaliyet (D5-D6)', data.corrective_action],
-                    ['Önleyici faaliyet (D7)', data.preventive_action],
+                    [t('sp.8d.containment'), data.containment],
+                    [t('sp.8d.root'), data.root_cause],
+                    [t('sp.8d.corrective'), data.corrective_action],
+                    [t('sp.8d.preventive'), data.preventive_action],
                   ].map(([title, body]) =>
                     body ? (
                       <div key={title as string} style={{ marginBottom: 14 }}>
@@ -243,12 +245,12 @@ export default function NcrDetail() {
 
               {canEdit && hasResponse && (
                 <div className="field" style={{ marginTop: 12 }}>
-                  <label>Etkinlik doğrulaması (D8)</label>
+                  <label>{t('nc.verification')}</label>
                   <textarea
                     rows={3}
                     value={effectiveness}
                     onChange={(e) => setEffectiveness(e.target.value)}
-                    placeholder="Düzeltici faaliyetin etkinliği nasıl doğrulandı? (örn. sonraki 3 partide tekrar görülmedi)"
+                    placeholder={t('nc.verification.ph')}
                   />
                   <button
                     className="btn btn-sm"
@@ -264,7 +266,7 @@ export default function NcrDetail() {
               {data.effectiveness && !canEdit && (
                 <div style={{ marginTop: 12 }}>
                   <div className="small muted" style={{ marginBottom: 4 }}>
-                    Etkinlik doğrulaması (D8)
+                    {t('nc.verification')}
                   </div>
                   <div style={{ fontSize: 13, lineHeight: 1.6 }}>{data.effectiveness}</div>
                 </div>
@@ -272,20 +274,20 @@ export default function NcrDetail() {
             </div>
 
             <div className="card">
-              <div className="card-title">Belgeler ({data.documents.length})</div>
+              <div className="card-title">{t('ad.docs.count')} ({data.documents.length})</div>
               {canEdit && (
                 <div style={{ marginBottom: 14 }}>
                   <FileSlot
-                    title="Belge yükle (tedarikçiyle paylaşılır)"
-                    meta="Fotoğraf, ölçüm raporu, 8D formu · max 20 MB"
+                    title={t('nc.upload.shared')}
+                    meta={t('nc.upload.meta')}
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip"
                     multiple
                     file={files}
                     onSelect={setFiles}
-                    labels={{ required: 'Zorunlu', optional: 'Opsiyonel', remove: 'Kaldır' }}
+                    labels={{ required: t('up.required'), optional: t('up.optional'), remove: t('up.remove') }}
                   />
                   <button className="btn btn-sm" style={{ marginTop: 10 }} onClick={upload} disabled={!files?.length || busy} type="button">
-                    Yükle
+                    {t('a.upload')}
                   </button>
                 </div>
               )}
@@ -294,8 +296,8 @@ export default function NcrDetail() {
                   <div style={{ flex: 1 }}>
                     <div className="doc-name">{doc.original_name}</div>
                     <div className="doc-meta">
-                      {formatBytes(doc.size_bytes)} · {formatDate(doc.created_at)}
-                      {doc.uploaded_by_supplier ? ' · tedarikçi yükledi' : ''}
+                      {formatBytes(doc.size_bytes)} · {formatDate(doc.created_at, false, lang)}
+                      {doc.uploaded_by_supplier ? ` · ${t('ad.by.supplier')}` : ''}
                     </div>
                   </div>
                   <button
@@ -303,14 +305,14 @@ export default function NcrDetail() {
                     type="button"
                     onClick={() => api.download(`/admin/documents/${doc.id}/download`, doc.original_name).catch((e) => toast.push(e.message, 'error'))}
                   >
-                    İndir
+                    {t('a.download')}
                   </button>
                 </div>
               ))}
             </div>
 
             <div className="card">
-              <div className="card-title">Notlar</div>
+              <div className="card-title">{t('a.notes')}</div>
               {!readOnly && (
                 <div className="stack" style={{ marginBottom: 14 }}>
                   <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Dahili not..." />
@@ -323,7 +325,7 @@ export default function NcrDetail() {
                 <div className={`note-item ${n.visibility === 'SHARED' ? 'shared' : ''}`} key={n.id}>
                   {n.body}
                   <div className="meta">
-                    {n.author} · {formatDate(n.created_at, true)}
+                    {n.author} · {formatDate(n.created_at, true, lang)}
                   </div>
                 </div>
               ))}
@@ -331,21 +333,21 @@ export default function NcrDetail() {
           </div>
 
           <div className="card">
-            <div className="card-title">İşlem geçmişi</div>
+            <div className="card-title">{t('a.history')}</div>
             <div className="timeline">
               {data.activity.map((a, i) => (
                 <div className={`timeline-item ${i > 0 ? 'muted-dot' : ''}`} key={a.id}>
                   <span className="timeline-dot" />
                   <div className="timeline-body">
-                    <strong>{a.action === 'STATUS_CHANGED' ? 'Durum değişti' : a.action}</strong>
+                    <strong>{label(ACTIVITY, a.action, lang)}</strong>
                     {a.from_value && a.to_value && (
                       <>
-                        : {label(NCR_STATUS, a.from_value)} → {label(NCR_STATUS, a.to_value)}
+                        : {label(NCR_STATUS, a.from_value, lang)} → {label(NCR_STATUS, a.to_value, lang)}
                       </>
                     )}
                     {a.detail && <div className="muted">{a.detail}</div>}
                     <div className="who">
-                      {a.actor_label} · {formatDate(a.created_at, true)}
+                      {a.actor_label} · {formatDate(a.created_at, true, lang)}
                     </div>
                   </div>
                 </div>

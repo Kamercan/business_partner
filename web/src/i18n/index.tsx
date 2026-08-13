@@ -1,4 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { adminDict } from './dict.admin';
+import type { Entry } from './entry';
+
+export type { Entry };
 
 export type Lang = 'tr' | 'en' | 'ja';
 
@@ -8,19 +12,18 @@ export const LANGS: Array<{ code: Lang; short: string; label: string }> = [
   { code: 'ja', short: '日本語', label: '日本語' },
 ];
 
-/** Bir metnin üç dildeki karşılığı. Üçü de zorunludur. */
-type Entry = { tr: string; en: string; ja: string };
-
 /**
  * Tedarikçiye dönük tüm yüzey (tanıtım sayfası, Business Partner kapısı,
  * başvuru formu, başvuru takibi, onaylı tedarikçi portalı ve süreli bağlantıyla
  * açılan self-servis ekran) üç dillidir: Türkçe, İngilizce, Japonca.
  *
+ * Yönetim paneli de aynı şekilde üç dillidir; sözlüğü büyüklüğü nedeniyle ayrı
+ * bir dosyada (`dict.admin.ts`) tutulur ve burada birleştirilir.
+ *
  * Sözlük anahtar bazında tutulur — üç dil yan yana durduğu için eksik çeviri
- * derleme hatası verir, gözden kaçamaz. Yönetim paneli Yanmar Türkiye ekibinin
- * iç aracıdır ve Türkçedir; ortak durum etiketleri (labels.ts) yine üç dillidir.
+ * derleme hatası verir, gözden kaçamaz.
  */
-const dict = {
+const publicDict = {
   // --------------------------------- Menü ----------------------------------
   'nav.products': { tr: 'Ürünler & Servisler', en: 'Products & Services', ja: '製品・サービス' },
   'nav.support': { tr: 'Destek & İletişim', en: 'Support & Contact', ja: 'サポート・お問い合わせ' },
@@ -612,6 +615,8 @@ const dict = {
   },
 } satisfies Record<string, Entry>;
 
+const dict = { ...publicDict, ...adminDict };
+
 export type TranslationKey = keyof typeof dict;
 
 /** Sunucudan gelen çok dilli referans kaydı (ürün grubu, sertifika, sektör). */
@@ -624,6 +629,12 @@ type I18nValue = {
   lang: Lang;
   setLang: (lang: Lang) => void;
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+  /**
+   * Sunucudan gelen (derleme anında bilinmeyen) anahtarlar için. Anahtar
+   * sözlükte yoksa `fallback` gösterilir — böylece sunucu yeni bir görev türü
+   * yazdığında arayüz boş kalmaz.
+   */
+  tKey: (key: string | null | undefined, fallback: string, vars?: Record<string, string | number>) => string;
   /** Sunucudan gelen çok dilli kayıtlar için yardımcı. */
   pick: (row: MultiLangRow, field?: 'name' | 'hint') => string;
 };
@@ -668,6 +679,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [lang],
   );
 
+  const tKey = useCallback<I18nValue['tKey']>(
+    (key, fallback, vars) => {
+      if (!key || !(key in dict)) return fallback;
+      return t(key as TranslationKey, vars);
+    },
+    [t],
+  );
+
   /**
    * Japonca içerik sonradan eklenebildiği için sırayla düşer:
    * seçili dil → İngilizce → Türkçe. Böylece yeni bir ürün grubu eklendiğinde
@@ -685,7 +704,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [lang],
   );
 
-  const value = useMemo(() => ({ lang, setLang, t, pick }), [lang, setLang, t, pick]);
+  const value = useMemo(() => ({ lang, setLang, t, tKey, pick }), [lang, setLang, t, tKey, pick]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

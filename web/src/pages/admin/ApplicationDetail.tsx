@@ -6,8 +6,10 @@ import { Badge, Grade, Loading, Modal, useToast } from '../../components/ui';
 import { useI18n } from '../../i18n';
 import { categoryNames, useMeta } from '../../hooks/useMeta';
 import {
+  ACTIVITY,
   APPLICATION_STATUS,
   AUDIT_STATUS,
+  STATUS_ACTION,
   DOCUMENT_KIND,
   PRIORITY,
   formatBytes,
@@ -65,43 +67,12 @@ type Detail = {
   allowedTransitions: string[];
 };
 
-const ACTION_LABELS: Record<string, { label: string; variant?: 'primary' | 'danger' }> = {
-  IN_REVIEW: { label: 'İncelemeye al' },
-  AUDIT_PENDING: { label: 'Onayla → Kaliteye gönder', variant: 'primary' },
-  APPROVED: { label: 'Onaylı tedarikçi yap', variant: 'primary' },
-  ON_HOLD: { label: 'Beklemeye al' },
-  REJECTED: { label: 'Reddet', variant: 'danger' },
-  DISQUALIFIED: { label: 'Ele', variant: 'danger' },
-  NEEDS_INFO: { label: 'Bilgi bekleniyor işaretle' },
-  AUDIT_PLANNED: { label: 'Denetim planlandı' },
-  AUDIT_IN_PROGRESS: { label: 'Denetim başladı' },
-  AUDIT_DONE: { label: 'Denetim tamamlandı' },
-};
-
-const ACTIVITY_LABELS: Record<string, string> = {
-  SUBMITTED: 'Başvuru gönderildi',
-  CREATED: 'Oluşturuldu',
-  IMPORTED: 'İçe aktarıldı',
-  STATUS_CHANGED: 'Durum değişti',
-  ASSIGNED: 'Sorumlu atandı',
-  PRIORITY_CHANGED: 'Öncelik değişti',
-  NOTE_ADDED: 'Not eklendi',
-  INFO_REQUESTED: 'Ek bilgi talep edildi',
-  DOCUMENT_UPLOADED: 'Belge yüklendi',
-  DOCUMENT_DOWNLOADED: 'Belge indirildi',
-  DOCUMENT_VISIBILITY_CHANGED: 'Belge görünürlüğü değişti',
-  SUPPLIER_DOCUMENT_UPLOADED: 'Tedarikçi belge yükledi',
-  SUPPLIER_MESSAGE: 'Tedarikçi mesaj gönderdi',
-  DUPLICATE_FLAGGED: 'Mükerrer olarak işaretlendi',
-  TASK_STATUS_CHANGED: 'Görev durumu değişti',
-};
-
 export default function ApplicationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
   const meta = useMeta();
-  const { lang } = useI18n();
+  const { t, lang, pick } = useI18n();
   const { can, user, readOnly } = useAuth();
 
   const [data, setData] = useState<Detail | null>(null);
@@ -122,7 +93,7 @@ export default function ApplicationDetail() {
     api
       .get<Detail>(`/admin/applications/${id}`)
       .then(setData)
-      .catch((err) => toast.push(err instanceof ApiError ? err.message : 'Yüklenemedi.', 'error'));
+      .catch((err) => toast.push(err instanceof ApiError ? err.message : t('a.load.failed'), 'error'));
   }, [id, toast]);
 
   useEffect(() => {
@@ -133,7 +104,7 @@ export default function ApplicationDetail() {
   if (!data) {
     return (
       <>
-        <TopBar title="Başvuru" />
+        <TopBar title={t('ad.title')} />
         <div className="admin-content">
           <Loading />
         </div>
@@ -151,12 +122,12 @@ export default function ApplicationDetail() {
         rejection_reason: ['REJECTED', 'DISQUALIFIED'].includes(statusModal) ? statusNote || undefined : undefined,
         notify,
       });
-      toast.push('Durum güncellendi ve ilgili birime iletildi.', 'ok');
+      toast.push(t('ad.status.updated'), 'ok');
       setStatusModal(null);
       setStatusNote('');
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Güncellenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.update.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -180,12 +151,12 @@ export default function ApplicationDetail() {
     setBusy(true);
     try {
       await api.post(`/admin/applications/${id}/request-info`, { message: infoMessage.trim() });
-      toast.push('Bilgi talebi tedarikçiye e-posta ile iletildi.', 'ok');
+      toast.push(t('ad.request.sent'), 'ok');
       setInfoModal(false);
       setInfoMessage('');
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Gönderilemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.send.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -196,7 +167,7 @@ export default function ApplicationDetail() {
       await api.patch(`/admin/applications/${id}`, { assigned_to: userId ? Number(userId) : null });
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Atama yapılamadı.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('ad.assign.failed'), 'error');
     }
   }
 
@@ -204,15 +175,15 @@ export default function ApplicationDetail() {
     <>
       <TopBar
         title={data.company_name}
-        subtitle={`${data.ref_no} · ${formatDate(data.created_at, true)}`}
+        subtitle={`${data.ref_no} · ${formatDate(data.created_at, true, lang)}`}
         actions={
           <>
             <Link className="btn btn-sm" to="/yonetim/basvurular">
-              ← Havuza dön
+              {t('ad.back')}
             </Link>
             {!readOnly &&
               data.allowedTransitions.map((s) => {
-                const def = ACTION_LABELS[s];
+                const def = STATUS_ACTION[s];
                 if (!def) return null;
                 return (
                   <button
@@ -221,7 +192,7 @@ export default function ApplicationDetail() {
                     className={`btn btn-sm ${def.variant === 'primary' ? 'btn-primary' : def.variant === 'danger' ? 'btn-danger' : ''}`}
                     onClick={() => setStatusModal(s)}
                   >
-                    {def.label}
+                    {label(STATUS_ACTION, s, lang)}
                   </button>
                 );
               })}
@@ -233,31 +204,33 @@ export default function ApplicationDetail() {
         <div className="detail-header">
           <div className="row-between wrap">
             <div className="row wrap" style={{ gap: 10 }}>
-              <Badge tone={tone(APPLICATION_STATUS, data.status)}>{label(APPLICATION_STATUS, data.status)}</Badge>
+              <Badge tone={tone(APPLICATION_STATUS, data.status)}>{label(APPLICATION_STATUS, data.status, lang)}</Badge>
               {latestGrade && (
                 <span className="row" style={{ gap: 6 }}>
-                  <span className="small muted">Kalite notu:</span>
+                  <span className="small muted">{t('a.grade')}:</span>
                   <Grade grade={latestGrade} />
                 </span>
               )}
-              <Badge tone={tone(PRIORITY, data.priority)}>Öncelik: {label(PRIORITY, data.priority)}</Badge>
-              <span className="small muted">Doluluk skoru: {data.completeness}/100</span>
+              <Badge tone={tone(PRIORITY, data.priority)}>
+                {t('a.priority')}: {label(PRIORITY, data.priority, lang)}
+              </Badge>
+              <span className="small muted">{t('ap.completeness')}: {data.completeness}/100</span>
               {data.supplier && (
                 <Link to={`/yonetim/tedarikciler/${data.supplier.id}`} className="badge badge-ok">
-                  Tedarikçi: {data.supplier.supplier_code}
+                  {t('a.supplier')}: {data.supplier.supplier_code}
                 </Link>
               )}
             </div>
             {!readOnly && (
               <div className="row">
-                <span className="small muted">Sorumlu:</span>
+                <span className="small muted">{t('a.owner')}:</span>
                 <select
                   className="input"
                   style={{ width: 200 }}
                   value={data.assigned_to ?? ''}
                   onChange={(e) => assign(e.target.value)}
                 >
-                  <option value="">Atanmadı</option>
+                  <option value="">{t('a.unassigned')}</option>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.full_name}
@@ -270,14 +243,14 @@ export default function ApplicationDetail() {
 
           {data.duplicate_of && data.duplicates.length > 0 && (
             <div className="form-error" style={{ marginTop: 14, marginBottom: 0 }}>
-              <strong>Olası mükerrer kayıt.</strong> Aynı firma/e-posta ile eşleşen başvurular:{' '}
+              <strong>{t('ad.duplicate.warn')}</strong> {t('ad.duplicate.list')}{' '}
               {data.duplicates.map((d, i) => (
                 <span key={d.id}>
                   {i > 0 && ', '}
                   <Link to={`/yonetim/basvurular/${d.id}`} style={{ textDecoration: 'underline' }}>
                     {d.ref_no}
                   </Link>{' '}
-                  ({label(APPLICATION_STATUS, d.status)})
+                  ({label(APPLICATION_STATUS, d.status, lang)})
                 </span>
               ))}
             </div>
@@ -288,24 +261,27 @@ export default function ApplicationDetail() {
           <div className="stack">
             {/* Firma bilgileri */}
             <div className="card">
-              <div className="card-title">Firma bilgileri</div>
+              <div className="card-title">{t('a.company.info')}</div>
               <dl className="kv">
-                <dt>Firma adı</dt>
+                <dt>{t('ad.company.name')}</dt>
                 <dd>{data.company_name}</dd>
-                <dt>Vergi / DUNS no</dt>
+                <dt>{t('a.tax')}</dt>
                 <dd className="mono">{data.tax_id}</dd>
-                <dt>Sektör</dt>
+                <dt>{t('a.sector')}</dt>
                 <dd>
-                  {meta?.sectors.find((s) => s.code === data.sector)?.[lang === 'tr' ? 'name_tr' : 'name_en'] ?? data.sector}
+                  {(() => {
+                    const sector = meta?.sectors.find((x) => x.code === data.sector);
+                    return sector ? pick(sector) : data.sector;
+                  })()}
                   {data.sector_other && ` — ${data.sector_other}`}
                 </dd>
-                <dt>Kuruluş yılı</dt>
+                <dt>{t('ad.founded')}</dt>
                 <dd>{data.founded_year ?? '—'}</dd>
-                <dt>Çalışan sayısı</dt>
+                <dt>{t('ad.employees')}</dt>
                 <dd>{data.employee_band ?? '—'}</dd>
-                <dt>Yıllık ciro</dt>
+                <dt>{t('ad.revenue')}</dt>
                 <dd>{data.revenue_band ?? '—'}</dd>
-                <dt>Web sitesi</dt>
+                <dt>{t('a.website')}</dt>
                 <dd>
                   {data.website ? (
                     <a href={data.website} target="_blank" rel="noreferrer noopener" style={{ color: 'var(--brand)' }}>
@@ -315,13 +291,13 @@ export default function ApplicationDetail() {
                     '—'
                   )}
                 </dd>
-                <dt>Konum</dt>
+                <dt>{t('a.location')}</dt>
                 <dd>
                   {data.city} / {data.country_other ?? data.country.toUpperCase()}
                 </dd>
                 {data.address && (
                   <>
-                    <dt>Adres</dt>
+                    <dt>{t('a.address')}</dt>
                     <dd>{data.address}</dd>
                   </>
                 )}
@@ -330,29 +306,29 @@ export default function ApplicationDetail() {
 
             {/* İletişim */}
             <div className="card">
-              <div className="card-title">İletişim</div>
+              <div className="card-title">{t('ad.contact')}</div>
               <dl className="kv">
-                <dt>Yetkili kişi</dt>
+                <dt>{t('ad.contact.person')}</dt>
                 <dd>
                   {data.contact_name}
                   {data.contact_position && <span className="muted"> · {data.contact_position}</span>}
                 </dd>
-                <dt>E-posta</dt>
+                <dt>{t('a.email')}</dt>
                 <dd>
                   <a href={`mailto:${data.email}`} style={{ color: 'var(--brand)' }}>
                     {data.email}
                   </a>
                 </dd>
-                <dt>Telefon</dt>
+                <dt>{t('a.phone')}</dt>
                 <dd>{data.phone}</dd>
               </dl>
             </div>
 
             {/* Yetkinlikler */}
             <div className="card">
-              <div className="card-title">Tedarik yetkinlikleri</div>
+              <div className="card-title">{t('ad.capabilities')}</div>
               <div className="small muted" style={{ marginBottom: 6 }}>
-                Ürün grupları
+                {t('a.categories')}
               </div>
               <div className="cat-tags" style={{ maxWidth: 'none', marginBottom: 14 }}>
                 {data.categories.map((c) => (
@@ -360,11 +336,11 @@ export default function ApplicationDetail() {
                     {catNames[c] ?? c}
                   </span>
                 ))}
-                {data.category_other && <span className="cat-tag">Diğer: {data.category_other}</span>}
+                {data.category_other && <span className="cat-tag">{t('ad.other')}: {data.category_other}</span>}
               </div>
 
               <div className="small muted" style={{ marginBottom: 6 }}>
-                Kalite sertifikaları
+                {t('ad.certs')}
               </div>
               <div className="cat-tags" style={{ maxWidth: 'none' }}>
                 {data.certifications.length === 0 && <span className="small muted">Belirtilmedi</span>}
@@ -386,7 +362,7 @@ export default function ApplicationDetail() {
               {data.about && (
                 <>
                   <div className="small muted" style={{ margin: '14px 0 6px' }}>
-                    Firma tanıtımı
+                    {t('ad.about')}
                   </div>
                   <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{data.about}</div>
                 </>
@@ -395,15 +371,15 @@ export default function ApplicationDetail() {
 
             {/* Belgeler */}
             <div className="card">
-              <div className="card-title">Belgeler ({data.documents.length})</div>
-              {data.documents.length === 0 && <div className="small muted">Belge yüklenmemiş.</div>}
+              <div className="card-title">{t('ad.docs.count')} ({data.documents.length})</div>
+              {data.documents.length === 0 && <div className="small muted">{t('ad.no.documents')}</div>}
               {data.documents.map((doc) => (
                 <div className={`doc-item ${doc.uploaded_by_supplier ? 'supplier-doc' : ''}`} key={doc.id}>
                   <div style={{ flex: 1 }}>
                     <div className="doc-name">{doc.original_name}</div>
                     <div className="doc-meta">
-                      {label(DOCUMENT_KIND, doc.kind)} · {formatBytes(doc.size_bytes)} · {formatDate(doc.created_at)}
-                      {doc.uploaded_by_supplier ? ' · tedarikçi yükledi' : doc.uploaded_by_name ? ` · ${doc.uploaded_by_name}` : ''}
+                      {label(DOCUMENT_KIND, doc.kind, lang)} · {formatBytes(doc.size_bytes)} · {formatDate(doc.created_at, false, lang)}
+                      {doc.uploaded_by_supplier ? ` · ${t('ad.by.supplier')}` : doc.uploaded_by_name ? ` · ${doc.uploaded_by_name}` : ''}
                     </div>
                   </div>
                   <button
@@ -411,7 +387,7 @@ export default function ApplicationDetail() {
                     type="button"
                     onClick={() => api.download(`/admin/documents/${doc.id}/download`, doc.original_name).catch((e) => toast.push(e.message, 'error'))}
                   >
-                    İndir
+                    {t('a.download')}
                   </button>
                 </div>
               ))}
@@ -419,7 +395,7 @@ export default function ApplicationDetail() {
 
             {/* Notlar */}
             <div className="card">
-              <div className="card-title">Notlar</div>
+              <div className="card-title">{t('a.notes')}</div>
               {!readOnly && (
                 <div className="stack" style={{ marginBottom: 14 }}>
                   <textarea
@@ -427,20 +403,20 @@ export default function ApplicationDetail() {
                     rows={3}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Dahili not ekleyin (tedarikçi göremez)..."
+                    placeholder={t('ad.note.ph')}
                   />
                   <button className="btn btn-sm" onClick={addNote} disabled={!note.trim() || busy} type="button" style={{ alignSelf: 'flex-start' }}>
                     Not ekle
                   </button>
                 </div>
               )}
-              {data.notes.length === 0 && <div className="small muted">Henüz not eklenmemiş.</div>}
+              {data.notes.length === 0 && <div className="small muted">{t('ad.no.notes')}</div>}
               {data.notes.map((n) => (
                 <div className={`note-item ${n.visibility === 'SHARED' ? 'shared' : ''}`} key={n.id}>
                   {n.body}
                   <div className="meta">
-                    {n.author} · {formatDate(n.created_at, true)}
-                    {n.visibility === 'SHARED' && ' · tedarikçiyle paylaşıldı'}
+                    {n.author} · {formatDate(n.created_at, true, lang)}
+                    {n.visibility === 'SHARED' && ` · ${t('ad.shared')}`}
                   </div>
                 </div>
               ))}
@@ -451,14 +427,14 @@ export default function ApplicationDetail() {
           <div className="stack">
             {!readOnly && (
               <div className="card">
-                <div className="card-title">Hızlı işlemler</div>
+                <div className="card-title">{t('ad.quick')}</div>
                 <div className="stack">
                   <button className="btn btn-block" onClick={() => setInfoModal(true)} type="button">
-                    Tedarikçiden bilgi/belge iste
+                    {t('ad.request.info')}
                   </button>
                   {data.audits.length > 0 && (
                     <Link className="btn btn-block" to={`/yonetim/denetimler/${data.audits[0].id}`}>
-                      Denetimi aç ({data.audits[0].audit_no})
+                      {t('ad.open.audit')} ({data.audits[0].audit_no})
                     </Link>
                   )}
                 </div>
@@ -468,7 +444,7 @@ export default function ApplicationDetail() {
             {/* Denetimler */}
             {data.audits.length > 0 && (
               <div className="card">
-                <div className="card-title">Kalite denetimleri</div>
+                <div className="card-title">{t('ad.audits')}</div>
                 {data.audits.map((a) => (
                   <Link
                     to={`/yonetim/denetimler/${a.id}`}
@@ -479,14 +455,14 @@ export default function ApplicationDetail() {
                     <div>
                       <div className="mono small">{a.audit_no}</div>
                       <div className="small muted">
-                        {a.auditor_name ?? 'Denetçi atanmadı'}
-                        {a.planned_date && ` · ${formatDate(a.planned_date)}`}
+                        {a.auditor_name ?? t('ad.no.auditor')}
+                        {a.planned_date && ` · ${formatDate(a.planned_date, false, lang)}`}
                       </div>
                     </div>
                     <div className="row">
                       {a.score !== null && <span className="small muted">{a.score}</span>}
                       <Grade grade={a.grade} />
-                      <Badge tone={tone(AUDIT_STATUS, a.status)}>{label(AUDIT_STATUS, a.status)}</Badge>
+                      <Badge tone={tone(AUDIT_STATUS, a.status)}>{label(AUDIT_STATUS, a.status, lang)}</Badge>
                     </div>
                   </Link>
                 ))}
@@ -495,36 +471,36 @@ export default function ApplicationDetail() {
 
             {/* KVKK kaydı */}
             <div className="card">
-              <div className="card-title">KVKK kaydı</div>
+              <div className="card-title">{t('ad.kvkk')}</div>
               <dl className="kv">
-                <dt>Onay</dt>
-                <dd>{data.kvkk_consent ? '✓ Alındı' : '✗ Yok'}</dd>
-                <dt>Metin sürümü</dt>
+                <dt>{t('a.approval')}</dt>
+                <dd>{data.kvkk_consent ? t('ad.received') : t('ad.not.received')}</dd>
+                <dt>{t('ad.kvkk.version')}</dt>
                 <dd className="mono small">{data.consent_version ?? '—'}</dd>
-                <dt>Onay zamanı</dt>
-                <dd>{formatDate(data.consent_at, true)}</dd>
+                <dt>{t('ad.kvkk.time')}</dt>
+                <dd>{formatDate(data.consent_at, true, lang)}</dd>
               </dl>
             </div>
 
             {/* Denetim izi */}
             <div className="card">
-              <div className="card-title">İşlem geçmişi</div>
+              <div className="card-title">{t('a.history')}</div>
               <div className="timeline">
                 {data.activity.map((a, i) => (
                   <div className={`timeline-item ${i > 0 ? 'muted-dot' : ''}`} key={a.id}>
                     <span className="timeline-dot" />
                     <div className="timeline-body">
-                      <strong>{ACTIVITY_LABELS[a.action] ?? a.action}</strong>
+                      <strong>{label(ACTIVITY, a.action, lang)}</strong>
                       {a.from_value && a.to_value && (
                         <>
                           {': '}
-                          {label(APPLICATION_STATUS, a.from_value)} → {label(APPLICATION_STATUS, a.to_value)}
+                          {label(APPLICATION_STATUS, a.from_value, lang)} → {label(APPLICATION_STATUS, a.to_value, lang)}
                         </>
                       )}
                       {!a.from_value && a.to_value && a.action !== 'STATUS_CHANGED' && <>: {a.to_value}</>}
                       {a.detail && <div className="muted">{a.detail}</div>}
                       <div className="who">
-                        {a.actor_label} · {formatDate(a.created_at, true)}
+                        {a.actor_label} · {formatDate(a.created_at, true, lang)}
                       </div>
                     </div>
                   </div>
@@ -538,7 +514,7 @@ export default function ApplicationDetail() {
       {/* --------------------------- Durum değişikliği --------------------------- */}
       {statusModal && (
         <Modal
-          title={ACTION_LABELS[statusModal]?.label ?? 'Durum değiştir'}
+          title={STATUS_ACTION[statusModal] ? label(STATUS_ACTION, statusModal, lang) : t('ad.change.status')}
           size="sm"
           onClose={() => setStatusModal(null)}
           footer={
@@ -546,7 +522,7 @@ export default function ApplicationDetail() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setStatusModal(null)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button
                   className={`btn ${['REJECTED', 'DISQUALIFIED'].includes(statusModal) ? 'btn-danger' : 'btn-primary'}`}
@@ -562,18 +538,20 @@ export default function ApplicationDetail() {
         >
           <div className="stack">
             <p className="small" style={{ lineHeight: 1.6 }}>
-              <strong>{data.company_name}</strong> başvurusu{' '}
-              <strong>{label(APPLICATION_STATUS, statusModal)}</strong> durumuna alınacak.
-              {statusModal === 'AUDIT_PENDING' && ' Kalite birimine otomatik olarak bir denetim görevi düşecek.'}
-              {statusModal === 'APPROVED' && ' Firma onaylı tedarikçi havuzuna eklenecek.'}
+              {t('ad.will.change', {
+                company: data.company_name,
+                status: label(APPLICATION_STATUS, statusModal, lang),
+              })}
+              {statusModal === 'AUDIT_PENDING' && ` ${t('ad.will.create.audit')}`}
+              {statusModal === 'APPROVED' && ` ${t('ad.will.create.supplier')}`}
             </p>
             <div className="field">
-              <label>{['REJECTED', 'DISQUALIFIED'].includes(statusModal) ? 'Gerekçe' : 'Not (opsiyonel)'}</label>
+              <label>{['REJECTED', 'DISQUALIFIED'].includes(statusModal) ? t('ad.reason') : t('ad.note.optional')}</label>
               <textarea rows={3} value={statusNote} onChange={(e) => setStatusNote(e.target.value)} />
             </div>
             <label className="row small" style={{ gap: 8 }}>
               <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
-              Tedarikçiye bilgilendirme e-postası gönder
+              {t('ad.notify.supplier')}
             </label>
           </div>
         </Modal>
@@ -582,7 +560,7 @@ export default function ApplicationDetail() {
       {/* ----------------------------- Bilgi talebi ----------------------------- */}
       {infoModal && (
         <Modal
-          title="Tedarikçiden bilgi / belge iste"
+          title={t('ad.request.info.title')}
           size="sm"
           onClose={() => setInfoModal(false)}
           footer={
@@ -590,10 +568,10 @@ export default function ApplicationDetail() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setInfoModal(false)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={requestInfo} disabled={busy || infoMessage.trim().length < 5} type="button">
-                  {busy && <span className="spinner" />} Gönder
+                  {busy && <span className="spinner" />} {t('btn.send')}
                 </button>
               </div>
             </>
@@ -601,15 +579,15 @@ export default function ApplicationDetail() {
         >
           <div className="stack">
             <p className="small muted" style={{ lineHeight: 1.6 }}>
-              Tedarikçiye, 30 gün geçerli güvenli bir yükleme bağlantısı içeren e-posta gönderilir. Hesap açmasına gerek yoktur.
+              {t('ad.request.info.hint')}
             </p>
             <div className="field">
-              <label>Talep edilen bilgi / belgeler</label>
+              <label>{t('ad.requested')}</label>
               <textarea
                 rows={5}
                 value={infoMessage}
                 onChange={(e) => setInfoMessage(e.target.value)}
-                placeholder={'Örn:\n- Güncel ISO 9001 sertifikanız (süresi dolmuş görünüyor)\n- Son 2 yıllık mali tablo özeti\n- Kapasite raporu'}
+                placeholder={t('ad.request.info.ph')}
               />
             </div>
           </div>

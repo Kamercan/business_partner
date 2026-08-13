@@ -33,18 +33,18 @@ type Row = {
 type ListResponse = { rows: Row[]; total: number; page: number; pageCount: number };
 
 const STATUS_GROUPS = [
-  { key: 'NEW,IN_REVIEW,NEEDS_INFO', label: 'Değerlendirme bekleyen' },
-  { key: 'AUDIT_PENDING,AUDIT_PLANNED,AUDIT_IN_PROGRESS,AUDIT_DONE', label: 'Denetim sürecinde' },
-  { key: 'APPROVED', label: 'Onaylı' },
-  { key: 'ON_HOLD', label: 'Beklemede' },
-  { key: 'REJECTED,DISQUALIFIED', label: 'Olumsuz' },
-];
+  { key: 'NEW,IN_REVIEW,NEEDS_INFO', label: 'ap.g.review' },
+  { key: 'AUDIT_PENDING,AUDIT_PLANNED,AUDIT_IN_PROGRESS,AUDIT_DONE', label: 'ap.g.audit' },
+  { key: 'APPROVED', label: 'ap.g.approved' },
+  { key: 'ON_HOLD', label: 'ap.g.hold' },
+  { key: 'REJECTED,DISQUALIFIED', label: 'ap.g.negative' },
+] as const;
 
 export default function Applications() {
   const [params, setParams] = useSearchParams();
   const toast = useToast();
   const meta = useMeta();
-  const { lang } = useI18n();
+  const { t, lang, pick } = useI18n();
   const { can } = useAuth();
 
   const [data, setData] = useState<ListResponse | null>(null);
@@ -105,9 +105,9 @@ export default function Applications() {
     setExporting(true);
     try {
       await api.download(`/admin/applications/export${qs(query)}`, 'tedarikci-basvurulari.xlsx');
-      toast.push('Excel dosyası indirildi.', 'ok');
+      toast.push(t('a.excel.ok'), 'ok');
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Dışa aktarım başarısız.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.excel.failed'), 'error');
     } finally {
       setExporting(false);
     }
@@ -121,11 +121,14 @@ export default function Applications() {
         { ids: selected, status },
       );
       const failed = res.results.filter((r) => !r.ok).length;
-      toast.push(`${res.updated} başvuru güncellendi${failed ? `, ${failed} atlandı` : ''}.`, failed ? 'info' : 'ok');
+      toast.push(
+        t('ap.bulk.done', { count: res.updated }) + (failed ? ` ${t('ap.bulk.skipped', { count: failed })}` : ''),
+        failed ? 'info' : 'ok',
+      );
       setSelected([]);
       update({});
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Toplu işlem başarısız.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('ap.bulk.failed'), 'error');
     }
   }
 
@@ -138,9 +141,9 @@ export default function Applications() {
     activeFilters.push({ key: `cert:${c}`, text: meta?.certifications.find((x) => x.code === c)?.name ?? c }),
   );
   (params.get('status') ?? '').split(',').filter(Boolean).forEach((s) =>
-    activeFilters.push({ key: `status:${s}`, text: label(APPLICATION_STATUS, s) }),
+    activeFilters.push({ key: `status:${s}`, text: label(APPLICATION_STATUS, s, lang) }),
   );
-  if (params.get('country')) activeFilters.push({ key: 'country', text: `Ülke: ${params.get('country')!.toUpperCase()}` });
+  if (params.get('country')) activeFilters.push({ key: 'country', text: `${t('a.country')}: ${params.get('country')!.toUpperCase()}` });
 
   const removeFilter = (key: string) => {
     if (key.includes(':')) {
@@ -155,8 +158,8 @@ export default function Applications() {
   return (
     <>
       <TopBar
-        title="Başvuru Havuzu"
-        subtitle="Tüm kanallardan gelen tedarikçi başvuruları"
+        title={t('ap.title')}
+        subtitle={t('ap.subtitle')}
         actions={
           <>
           <button className="btn" onClick={exportExcel} disabled={exporting} type="button">
@@ -171,17 +174,17 @@ export default function Applications() {
         <div className="filters">
           <div className="filter-row">
             <div className="field grow">
-              <label>Arama</label>
+              <label>{t('a.search')}</label>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Firma adı, referans no, e-posta, vergi no, şehir, referanslar..."
+                placeholder={t('ap.search.ph')}
               />
             </div>
             <div className="field">
-              <label>Ülke</label>
+              <label>{t('a.country')}</label>
               <select value={params.get('country') ?? ''} onChange={(e) => update({ country: e.target.value || undefined })}>
-                <option value="">Tümü</option>
+                <option value="">{t('a.all')}</option>
                 {meta?.countries.map((c) => (
                   <option key={c.code} value={c.code}>
                     {lang === 'tr' ? c.tr : c.en}
@@ -190,7 +193,7 @@ export default function Applications() {
               </select>
             </div>
             <div className="field">
-              <label>Sıralama</label>
+              <label>{t('ap.sort')}</label>
               <select
                 value={`${params.get('sort') ?? 'created_at'}:${params.get('dir') ?? 'desc'}`}
                 onChange={(e) => {
@@ -198,17 +201,17 @@ export default function Applications() {
                   update({ sort, dir });
                 }}
               >
-                <option value="created_at:desc">En yeni</option>
-                <option value="created_at:asc">En eski</option>
-                <option value="company_name:asc">Firma adı (A-Z)</option>
-                <option value="completeness:desc">Doluluk (yüksek)</option>
+                <option value="created_at:desc">{t('ap.sort.newest')}</option>
+                <option value="created_at:asc">{t('ap.sort.oldest')}</option>
+                <option value="company_name:asc">{t('ap.sort.company')}</option>
+                <option value="completeness:desc">{t('ap.sort.completeness')}</option>
               </select>
             </div>
           </div>
 
           <div style={{ marginTop: 12 }}>
             <div className="small muted" style={{ marginBottom: 5 }}>
-              Ürün grubu
+              {t('a.category')}
             </div>
             <div className="filter-chips">
               {meta?.categories.map((c) => (
@@ -218,7 +221,7 @@ export default function Applications() {
                   className={`filter-chip ${isOn('category', c.code) ? 'on' : ''}`}
                   onClick={() => toggleCsv('category', c.code)}
                 >
-                  {lang === 'tr' ? c.name_tr : c.name_en}
+                  {pick(c)}
                 </button>
               ))}
             </div>
@@ -226,7 +229,7 @@ export default function Applications() {
 
           <div style={{ marginTop: 10 }}>
             <div className="small muted" style={{ marginBottom: 5 }}>
-              Kalite sertifikası (seçilenlerin tümüne sahip olanlar)
+              {t('ap.cert.filter')}
             </div>
             <div className="filter-chips">
               {meta?.certifications.map((c) => (
@@ -244,7 +247,7 @@ export default function Applications() {
 
           <div style={{ marginTop: 10 }}>
             <div className="small muted" style={{ marginBottom: 5 }}>
-              Durum
+              {t('a.status')}
             </div>
             <div className="filter-chips">
               {STATUS_GROUPS.map((g) => (
@@ -254,7 +257,7 @@ export default function Applications() {
                   className={`filter-chip ${params.get('status') === g.key ? 'on' : ''}`}
                   onClick={() => update({ status: params.get('status') === g.key ? undefined : g.key })}
                 >
-                  {g.label}
+                  {t(g.label)}
                 </button>
               ))}
             </div>
@@ -262,11 +265,11 @@ export default function Applications() {
 
           {activeFilters.length > 0 && (
             <div className="active-filters">
-              <span className="small muted">Aktif filtreler:</span>
+              <span className="small muted">{t('ap.active.filters')}</span>
               {activeFilters.map((f) => (
                 <span className="active-filter" key={f.key}>
                   {f.text}
-                  <button type="button" onClick={() => removeFilter(f.key)} aria-label="Filtreyi kaldır">
+                  <button type="button" onClick={() => removeFilter(f.key)} aria-label={t('a.remove.filter')}>
                     ×
                   </button>
                 </span>
@@ -280,7 +283,7 @@ export default function Applications() {
                   setParams(new URLSearchParams());
                 }}
               >
-                tümünü temizle
+                {t('a.clear.filters')}
               </button>
             </div>
           )}
@@ -290,13 +293,13 @@ export default function Applications() {
         {selected.length > 0 && can('MODERATOR') && (
           <div className="card" style={{ marginBottom: 12, padding: '12px 16px' }}>
             <div className="row-between wrap">
-              <strong className="small">{selected.length} başvuru seçildi</strong>
+              <strong className="small">{t('ap.selected', { count: selected.length })}</strong>
               <div className="row wrap">
                 <button className="btn btn-sm" onClick={() => bulkStatus('IN_REVIEW')} type="button">
-                  İncelemeye al
+                  {t('ap.to.review')}
                 </button>
                 <button className="btn btn-sm btn-primary" onClick={() => bulkStatus('AUDIT_PENDING')} type="button">
-                  Kaliteye gönder
+                  {t('ap.to.quality')}
                 </button>
                 <button className="btn btn-sm" onClick={() => bulkStatus('ON_HOLD')} type="button">
                   Beklemeye al
@@ -305,7 +308,7 @@ export default function Applications() {
                   Reddet
                 </button>
                 <button className="btn btn-sm btn-ghost" onClick={() => setSelected([])} type="button">
-                  Seçimi temizle
+                  {t('ap.clear.selection')}
                 </button>
               </div>
             </div>
@@ -317,7 +320,7 @@ export default function Applications() {
           {loading && !data ? (
             <Loading />
           ) : data && data.rows.length === 0 ? (
-            <EmptyState title="Kayıt bulunamadı" hint="Filtreleri gevşetmeyi deneyin." />
+            <EmptyState title={t('ap.empty')} hint={t('ap.empty.hint')} />
           ) : (
             <>
               <div className="table-scroll">
@@ -330,18 +333,18 @@ export default function Applications() {
                             type="checkbox"
                             checked={!!data && selected.length === data.rows.length && data.rows.length > 0}
                             onChange={(e) => setSelected(e.target.checked ? (data?.rows ?? []).map((r) => r.id) : [])}
-                            aria-label="Tümünü seç"
+                            aria-label={t('ap.select.all')}
                           />
                         </th>
                       )}
-                      <th>Firma</th>
-                      <th>Ürün grupları</th>
-                      <th>Sertifikalar</th>
-                      <th>Konum</th>
-                      <th>Durum</th>
-                      <th>Not</th>
-                      <th>Doluluk</th>
-                      <th>Tarih</th>
+                      <th>{t('a.company')}</th>
+                      <th>{t('a.categories')}</th>
+                      <th>{t('ap.certs')}</th>
+                      <th>{t('ap.location')}</th>
+                      <th>{t('a.status')}</th>
+                      <th>{t('ap.grade')}</th>
+                      <th>{t('ap.completeness')}</th>
+                      <th>{t('a.date')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -355,7 +358,7 @@ export default function Applications() {
                               onChange={(e) =>
                                 setSelected((prev) => (e.target.checked ? [...prev, row.id] : prev.filter((id) => id !== row.id)))
                               }
-                              aria-label={`${row.company_name} seç`}
+                              aria-label={row.company_name}
                             />
                           </td>
                         )}
@@ -364,8 +367,8 @@ export default function Applications() {
                             {row.company_name}
                           </Link>
                           {row.duplicate_of && (
-                            <span className="badge badge-warn" style={{ marginLeft: 6 }} title="Olası mükerrer kayıt">
-                              mükerrer?
+                            <span className="badge badge-warn" style={{ marginLeft: 6 }} title={t('ap.duplicate')}>
+                              {t('ap.duplicate.q')}
                             </span>
                           )}
                           <div className="ref">
@@ -401,7 +404,7 @@ export default function Applications() {
                           <div className="small muted">{row.country.toUpperCase()}</div>
                         </td>
                         <td className="tight">
-                          <Badge tone={tone(APPLICATION_STATUS, row.status)}>{label(APPLICATION_STATUS, row.status)}</Badge>
+                          <Badge tone={tone(APPLICATION_STATUS, row.status)}>{label(APPLICATION_STATUS, row.status, lang)}</Badge>
                         </td>
                         <td>
                           <Grade grade={row.grade} />
@@ -416,8 +419,8 @@ export default function Applications() {
                           <div className="small muted">{row.document_count} belge</div>
                         </td>
                         <td className="tight small">
-                          {formatDate(row.created_at)}
-                          <div className="muted">{relativeDays(row.created_at)}</div>
+                          {formatDate(row.created_at, false, lang)}
+                          <div className="muted">{relativeDays(row.created_at, lang)}</div>
                         </td>
                       </tr>
                     ))}

@@ -167,6 +167,7 @@ auditRoutes.post(
     createTask({
       type: 'PERFORM_AUDIT',
       title: `Tedarikçi denetimi: ${companyName}`,
+      subject: companyName,
       entityType: 'AUDIT',
       entityId: auditId,
       assignedRole: 'QUALITY',
@@ -392,6 +393,9 @@ auditRoutes.post(
           type: 'REVIEW_APPLICATION',
           title: `Denetim sonucu kararı: ${app.company_name}`,
           description: `Denetim tamamlandı (Not: ${grade}, Puan: ${computed.score}). Onay veya eleme kararı bekleniyor.`,
+          subject: app.company_name,
+          detailKey: 'task.d.audit.decision',
+          detailParams: { grade, score: computed.score },
           entityType: 'APPLICATION',
           entityId: audit.application_id,
           assignedRole: 'MODERATOR',

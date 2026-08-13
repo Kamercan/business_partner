@@ -45,6 +45,12 @@ export function migrate(): void {
   addColumnIfMissing('certifications', 'description_ja', 'TEXT');
   addColumnIfMissing('sectors', 'name_ja', 'TEXT');
   addColumnIfMissing('applications', 'lang', "TEXT NOT NULL DEFAULT 'tr'");
+
+  // Görev başlıklarının dile duyarlı gösterimi (sonradan eklendi)
+  addColumnIfMissing('tasks', 'subject', 'TEXT');
+  addColumnIfMissing('tasks', 'detail_key', 'TEXT');
+  addColumnIfMissing('tasks', 'detail_params', 'TEXT');
+  backfillTaskSubjects();
   addColumnIfMissing('suppliers', 'lang', "TEXT NOT NULL DEFAULT 'tr'");
 
   migratePortalTokenPurposes();
@@ -59,6 +65,19 @@ function backfillMailAudience(): void {
     `UPDATE mail_outbox SET audience = 'INTERNAL'
       WHERE audience != 'INTERNAL'
         AND lower(to_email) IN (SELECT lower(email) FROM users)`,
+  ).run();
+}
+
+/**
+ * Eski görevlerde başlık "Başvuru değerlendirmesi: ACME A.Ş." biçiminde tek
+ * parça yazılmıştı. İki noktadan sonrası firma adıdır; `subject` alanına
+ * taşınır ki başlık seçili dilde yeniden kurulabilsin.
+ */
+function backfillTaskSubjects(): void {
+  db.prepare(
+    `UPDATE tasks
+        SET subject = trim(substr(title, instr(title, ': ') + 2))
+      WHERE subject IS NULL AND instr(title, ': ') > 0`,
   ).run();
 }
 

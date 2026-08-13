@@ -135,12 +135,14 @@ denetim izine yazılır.
 
 ## Çok dillilik
 
-Tedarikçiye dönük yüzey üç dillidir (TR / EN / JA); yönetim paneli Türkçedir.
+Uygulamanın tamamı üç dillidir (TR / EN / JA) — kamuya açık yüzey ve yönetim
+paneli dahil.
 
 | Katman | Nerede | Not |
 |---|---|---|
-| Arayüz metinleri | `web/src/i18n/index.tsx` | Anahtar bazlı sözlük; üç dil yan yana, eksik dil derleme hatası |
-| Durum/rol etiketleri | `web/src/lib/labels.ts` | Panel ve portal ortak kullanır |
+| Kamuya açık arayüz | `web/src/i18n/index.tsx` | Anahtar bazlı sözlük; üç dil yan yana, eksik dil derleme hatası |
+| Yönetim paneli | `web/src/i18n/dict.admin.ts` | Aynı yapı; boyutu nedeniyle ayrı dosyada, `index.tsx` içinde birleşir |
+| Durum/rol/hareket etiketleri | `web/src/lib/labels.ts` | Panel ve portal ortak kullanır (`ACTIVITY`, `STATUS_ACTION` dahil) |
 | Referans veriler | `categories`, `sectors`, `certifications` tabloları | `name_ja` / `hint_ja` / `description_ja` sütunları; boşsa EN, o da yoksa TR |
 | E-posta şablonları | `server/src/lib/mailText.ts` | Tedarikçiye giden bildirimler; ekip bildirimleri Türkçe |
 | Sunucu mesajları | `server/src/lib/uiText.ts` | İstek `X-Lang` başlığıyla dil bildirir |
@@ -150,6 +152,13 @@ Tedarikçiye dönük yüzey üç dillidir (TR / EN / JA); yönetim paneli Türk�
 Böylece bildirimin dili, e-postayı tetikleyen Yanmar çalışanının tarayıcı diline
 değil, tedarikçinin başvurduğu dile bağlıdır — aylar sonra açılan bir uygunsuzluk
 raporu da doğru dilde gider.
+
+**Veri ile arayüz ayrımı.** Firma adı, kişi adı, dosya adı ve tedarikçinin
+yazdığı serbest metinler veridir; girildikleri dilde kalır. Sunucunun ürettiği
+görev başlıkları ise ikiye ayrılmıştır: `tasks.subject` veri kısmını (firma adı),
+`tasks.detail_key` + `detail_params` ise açıklamanın çeviri anahtarını taşır.
+Böylece Türkçe açılmış bir görev, Japonca panelde Japonca okunur. Eski kayıtlar
+için Türkçe `title`/`description` alanları yedek olarak durmaya devam eder.
 
 Yeni bir dil eklemek üç adımdır: `Lang` tipine kodu eklemek, sözlüklerdeki
 eksik alanları doldurmak (derleyici hepsini tek tek gösterir) ve referans

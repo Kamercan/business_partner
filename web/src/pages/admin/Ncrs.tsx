@@ -4,6 +4,7 @@ import { ApiError, api, qs } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, EmptyState, Loading, Modal, Pagination, useToast } from '../../components/ui';
 import { NCR_CATEGORY, NCR_SEVERITY, NCR_STATUS, formatDate, label, tone } from '../../lib/labels';
+import { useI18n } from '../../i18n';
 import { TopBar } from './AdminLayout';
 
 type Row = {
@@ -37,6 +38,7 @@ const EMPTY = {
 };
 
 export default function Ncrs() {
+  const { t, lang } = useI18n();
   const [params, setParams] = useSearchParams();
   const toast = useToast();
   const { can, readOnly } = useAuth();
@@ -90,12 +92,12 @@ export default function Ncrs() {
         due_date: form.due_date || undefined,
         notify: form.notify,
       });
-      toast.push('Uygunsuzluk raporu açıldı ve tedarikçiye iletildi.', 'ok');
+      toast.push(t('nc.created'), 'ok');
       setModal(false);
       setForm(EMPTY);
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Oluşturulamadı.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.create.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -104,8 +106,8 @@ export default function Ncrs() {
   return (
     <>
       <TopBar
-        title="Uygunsuzluk Raporları (NCR)"
-        subtitle="Tedarikçi kaynaklı uygunsuzlukların 8D takibi"
+        title={t('nc.title')}
+        subtitle={t('nc.subtitle')}
         actions={
           !readOnly &&
           can('QUALITY', 'MODERATOR') && (
@@ -120,31 +122,31 @@ export default function Ncrs() {
         <div className="filters">
           <div className="filter-row">
             <div className="field grow">
-              <label>Arama</label>
+              <label>{t('a.search')}</label>
               <input
                 defaultValue={params.get('q') ?? ''}
-                placeholder="Konu, rapor no, firma veya parça no"
+                placeholder={t('nc.search.ph')}
                 onKeyDown={(e) => e.key === 'Enter' && update({ q: (e.target as HTMLInputElement).value || undefined })}
               />
             </div>
             <div className="field">
-              <label>Durum</label>
+              <label>{t('a.status')}</label>
               <select value={params.get('status') ?? ''} onChange={(e) => update({ status: e.target.value || undefined })}>
-                <option value="">Tümü</option>
+                <option value="">{t('a.all')}</option>
                 {Object.keys(NCR_STATUS).map((s) => (
                   <option key={s} value={s}>
-                    {label(NCR_STATUS, s)}
+                    {label(NCR_STATUS, s, lang)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="field">
-              <label>Önem</label>
+              <label>{t('nc.severity')}</label>
               <select value={params.get('severity') ?? ''} onChange={(e) => update({ severity: e.target.value || undefined })}>
-                <option value="">Tümü</option>
+                <option value="">{t('a.all')}</option>
                 {Object.keys(NCR_SEVERITY).map((s) => (
                   <option key={s} value={s}>
-                    {label(NCR_SEVERITY, s)}
+                    {label(NCR_SEVERITY, s, lang)}
                   </option>
                 ))}
               </select>
@@ -157,7 +159,7 @@ export default function Ncrs() {
                 style={{ padding: '9px 14px' }}
                 onClick={() => update({ overdue: params.get('overdue') ? undefined : 'true' })}
               >
-                Yalnızca gecikmişler
+                {t('nc.overdue.only')}
               </button>
             </div>
           </div>
@@ -167,20 +169,20 @@ export default function Ncrs() {
           {loading && !data ? (
             <Loading />
           ) : data && data.rows.length === 0 ? (
-            <EmptyState title="Uygunsuzluk kaydı yok" />
+            <EmptyState title={t('nc.empty')} />
           ) : (
             <>
               <div className="table-scroll">
                 <table className="data">
                   <thead>
                     <tr>
-                      <th>Rapor</th>
-                      <th>Tedarikçi</th>
-                      <th>Kategori</th>
-                      <th>Önem</th>
-                      <th>Durum</th>
-                      <th>Tespit</th>
-                      <th>Termin</th>
+                      <th>{t('nc.report')}</th>
+                      <th>{t('a.supplier')}</th>
+                      <th>{t('nc.category')}</th>
+                      <th>{t('nc.severity')}</th>
+                      <th>{t('a.status')}</th>
+                      <th>{t('nc.detected')}</th>
+                      <th>{t('nc.due.col')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,19 +200,19 @@ export default function Ncrs() {
                         <td>
                           <Link to={`/yonetim/tedarikciler/${row.supplier_id}`}>{row.company_name}</Link>
                         </td>
-                        <td className="small">{label(NCR_CATEGORY, row.category)}</td>
+                        <td className="small">{label(NCR_CATEGORY, row.category, lang)}</td>
                         <td className="tight">
-                          <Badge tone={tone(NCR_SEVERITY, row.severity)}>{label(NCR_SEVERITY, row.severity)}</Badge>
+                          <Badge tone={tone(NCR_SEVERITY, row.severity)}>{label(NCR_SEVERITY, row.severity, lang)}</Badge>
                         </td>
                         <td className="tight">
-                          <Badge tone={tone(NCR_STATUS, row.status)}>{label(NCR_STATUS, row.status)}</Badge>
+                          <Badge tone={tone(NCR_STATUS, row.status)}>{label(NCR_STATUS, row.status, lang)}</Badge>
                         </td>
-                        <td className="tight small">{formatDate(row.detected_at)}</td>
+                        <td className="tight small">{formatDate(row.detected_at, false, lang)}</td>
                         <td className="tight small">
-                          {formatDate(row.due_date)}
+                          {formatDate(row.due_date, false, lang)}
                           {row.is_overdue === 1 && (
                             <div className="badge badge-danger" style={{ marginTop: 3 }}>
-                              gecikmiş
+                              {t('a.overdue')}
                             </div>
                           )}
                         </td>
@@ -229,15 +231,15 @@ export default function Ncrs() {
 
       {modal && (
         <Modal
-          title="Yeni uygunsuzluk raporu"
-          subtitle="Tedarikçiye 8D formatında düzeltici faaliyet talebi gönderilir."
+          title={t('nc.new.title')}
+          subtitle={t('nc.new.hint')}
           onClose={() => setModal(false)}
           footer={
             <>
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setModal(false)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button
                   className="btn btn-primary"
@@ -245,7 +247,7 @@ export default function Ncrs() {
                   disabled={busy || !form.supplier_id || form.title.length < 3 || form.description.length < 10}
                   type="button"
                 >
-                  {busy && <span className="spinner" />} Oluştur ve gönder
+                  {busy && <span className="spinner" />} {t('nc.create.send')}
                 </button>
               </div>
             </>
@@ -254,10 +256,10 @@ export default function Ncrs() {
           <div className="stack">
             <div className="field">
               <label>
-                Tedarikçi <span className="req">*</span>
+                {t('a.supplier')} <span className="req">*</span>
               </label>
               <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}>
-                <option value="">Seçiniz...</option>
+                <option value="">{t('a.choose')}</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.company_name} ({s.supplier_code})
@@ -269,61 +271,61 @@ export default function Ncrs() {
               <label>
                 Konu <span className="req">*</span>
               </label>
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Hidrolik silindir mil yüzeyinde çizik" />
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t('nc.title.ph')} />
             </div>
             <div className="grid-2">
               <div className="field">
-                <label>Kategori</label>
+                <label>{t('nc.category')}</label>
                 <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                   {Object.keys(NCR_CATEGORY).map((c) => (
                     <option key={c} value={c}>
-                      {label(NCR_CATEGORY, c)}
+                      {label(NCR_CATEGORY, c, lang)}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="field">
-                <label>Önem derecesi</label>
+                <label>{t('nc.severity.label')}</label>
                 <select value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
                   {Object.keys(NCR_SEVERITY).map((s) => (
                     <option key={s} value={s}>
-                      {label(NCR_SEVERITY, s)}
+                      {label(NCR_SEVERITY, s, lang)}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="field">
-                <label>Parça no</label>
+                <label>{t('nc.part')}</label>
                 <input value={form.part_no} onChange={(e) => setForm({ ...form, part_no: e.target.value })} />
               </div>
               <div className="field">
-                <label>Etkilenen adet</label>
+                <label>{t('nc.affected')}</label>
                 <input type="number" min="0" value={form.qty_affected} onChange={(e) => setForm({ ...form, qty_affected: e.target.value })} />
               </div>
               <div className="field">
-                <label>Tespit tarihi</label>
+                <label>{t('nc.detected.date')}</label>
                 <input type="date" value={form.detected_at} onChange={(e) => setForm({ ...form, detected_at: e.target.value })} />
               </div>
               <div className="field">
-                <label>Cevap termini</label>
+                <label>{t('nc.due.label')}</label>
                 <input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-                <span className="hint">Boş bırakılırsa varsayılan SLA uygulanır.</span>
+                <span className="hint">{t('nc.due.hint')}</span>
               </div>
             </div>
             <div className="field">
               <label>
-                Uygunsuzluk tanımı <span className="req">*</span>
+                {t('nc.description')} <span className="req">*</span>
               </label>
               <textarea
                 rows={4}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Tespit edilen uygunsuzluğun detayı, hangi kontrolde bulunduğu, etkisi..."
+                placeholder={t('nc.description.ph')}
               />
             </div>
             <label className="row small" style={{ gap: 8 }}>
               <input type="checkbox" checked={form.notify} onChange={(e) => setForm({ ...form, notify: e.target.checked })} />
-              Tedarikçiye cevap bağlantısı içeren e-posta gönder
+              {t('nc.notify')}
             </label>
           </div>
         </Modal>

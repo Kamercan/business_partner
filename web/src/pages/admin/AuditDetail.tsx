@@ -45,17 +45,17 @@ type Audit = {
 
 /** Puanlama ölçeği — denetçiye tutarlı bir dil sunar. */
 const SCALE = [
-  { value: 0, label: '0 · Yok' },
-  { value: 25, label: '25 · Yetersiz' },
-  { value: 50, label: '50 · Kısmi' },
-  { value: 75, label: '75 · İyi' },
-  { value: 100, label: '100 · Mükemmel' },
-];
+  { value: 0, label: 'au.score.0' },
+  { value: 25, label: 'au.score.25' },
+  { value: 50, label: 'au.score.50' },
+  { value: 75, label: 'au.score.75' },
+  { value: 100, label: 'au.score.100' },
+] as const;
 
 export default function AuditDetail() {
   const { id } = useParams();
   const toast = useToast();
-  const { lang } = useI18n();
+  const { t, lang } = useI18n();
   const { can, user, readOnly } = useAuth();
 
   const [audit, setAudit] = useState<Audit | null>(null);
@@ -93,7 +93,7 @@ export default function AuditDetail() {
           recommendation: data.recommendation ?? 'APPROVE',
         }));
       })
-      .catch((err) => toast.push(err instanceof ApiError ? err.message : 'Yüklenemedi.', 'error'));
+      .catch((err) => toast.push(err instanceof ApiError ? err.message : t('a.load.failed'), 'error'));
   }, [id, toast]);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function AuditDetail() {
   if (!audit) {
     return (
       <>
-        <TopBar title="Denetim" />
+        <TopBar title={t('au.detail')} />
         <div className="admin-content">
           <Loading />
         </div>
@@ -161,7 +161,7 @@ export default function AuditDetail() {
         method: plan.method || undefined,
         auditor_id: plan.auditor_id ? Number(plan.auditor_id) : null,
       });
-      toast.push('Denetim planlandı.', 'ok');
+      toast.push(t('au.planned'), 'ok');
       setPlanModal(false);
       load();
     } catch (err) {
@@ -182,11 +182,11 @@ export default function AuditDetail() {
         grade_override: completion.grade_override || undefined,
         override_reason: completion.override_reason || undefined,
       });
-      toast.push('Denetim tamamlandı, sonuç satınalma birimine iletildi.', 'ok');
+      toast.push(t('au.complete.ok'), 'ok');
       setCompleteModal(false);
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Tamamlanamadı.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('au.complete.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -204,22 +204,22 @@ export default function AuditDetail() {
             </Link>
             {audit.application_id && (
               <Link className="btn btn-sm" to={`/yonetim/basvurular/${audit.application_id}`}>
-                Başvuruyu aç
+                {t('au.open.application')}
               </Link>
             )}
             {!locked && (
               <>
                 <button className="btn btn-sm" onClick={() => setPlanModal(true)} type="button">
-                  Planla / denetçi ata
+                  {t('au.plan')}
                 </button>
                 <button className="btn btn-sm" onClick={saveScores} disabled={busy} type="button">
-                  {busy && <span className="spinner" />} Puanları kaydet
+                  {busy && <span className="spinner" />} {t('au.save.scores')}
                 </button>
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={() => setCompleteModal(true)}
                   disabled={liveScore.answered < liveScore.total}
-                  title={liveScore.answered < liveScore.total ? 'Önce tüm maddeleri puanlayın' : undefined}
+                  title={liveScore.answered < liveScore.total ? t('au.score.all.first') : undefined}
                   type="button"
                 >
                   Denetimi tamamla
@@ -239,11 +239,11 @@ export default function AuditDetail() {
                 <div className="row-between wrap">
                   <div>
                     <div className="card-title" style={{ marginBottom: 4 }}>
-                      Denetim tamamlandı
+                      {t('au.completed')}
                     </div>
                     <div className="small muted">
-                      {formatDate(audit.completed_at, true)} · {audit.auditor_name} ·{' '}
-                      {label(RECOMMENDATION, audit.recommendation)}
+                      {formatDate(audit.completed_at, true, lang)} · {audit.auditor_name} ·{' '}
+                      {label(RECOMMENDATION, audit.recommendation, lang)}
                     </div>
                   </div>
                   <div className="row">
@@ -256,7 +256,7 @@ export default function AuditDetail() {
                 {audit.strengths && (
                   <>
                     <div className="small muted" style={{ margin: '14px 0 4px' }}>
-                      Güçlü yönler
+                      {t('au.strengths')}
                     </div>
                     <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{audit.strengths}</div>
                   </>
@@ -264,7 +264,7 @@ export default function AuditDetail() {
                 {audit.findings && (
                   <>
                     <div className="small muted" style={{ margin: '12px 0 4px' }}>
-                      Bulgular / iyileştirme alanları
+                      {t('au.findings')}
                     </div>
                     <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{audit.findings}</div>
                   </>
@@ -279,14 +279,14 @@ export default function AuditDetail() {
                   <header>
                     <span>{section}</span>
                     <span className="muted small">
-                      {answered}/{items.length} puanlandı
+                      {t('au.scored', { done: answered, total: items.length })}
                     </span>
                   </header>
                   {items.map((item) => (
                     <div className="audit-item" key={item.id}>
                       <div className="q">
                         {lang === 'tr' ? item.question_tr : item.question_en}
-                        <span className="weight">ağırlık ×{item.weight}</span>
+                        <span className="weight">{t('au.weight')} ×{item.weight}</span>
                       </div>
                       <div className="score-row">
                         {SCALE.map((s) => (
@@ -297,7 +297,7 @@ export default function AuditDetail() {
                             disabled={locked}
                             onClick={() => setScores((prev) => ({ ...prev, [item.id]: s.value }))}
                           >
-                            {s.label}
+                            {t(s.label)}
                           </button>
                         ))}
                       </div>
@@ -305,7 +305,7 @@ export default function AuditDetail() {
                         <input
                           className="input"
                           style={{ marginTop: 8 }}
-                          placeholder="Bulgu / açıklama (opsiyonel)"
+                          placeholder={t('au.finding.ph')}
                           value={notes[item.id] ?? ''}
                           onChange={(e) => setNotes((prev) => ({ ...prev, [item.id]: e.target.value }))}
                         />
@@ -321,7 +321,7 @@ export default function AuditDetail() {
           {/* ------------------------------ Yan panel ------------------------------ */}
           <div className="stack">
             <div className="score-summary">
-              <div className="card-title">{audit.status === 'COMPLETED' ? 'Sonuç' : 'Anlık puan'}</div>
+              <div className="card-title">{audit.status === 'COMPLETED' ? t('au.result') : t('au.live.score')}</div>
               <div className="row" style={{ gap: 14, alignItems: 'baseline' }}>
                 <span className="big-score">{audit.status === 'COMPLETED' ? audit.score : liveScore.score}</span>
                 <span className="muted">/ 100</span>
@@ -334,33 +334,33 @@ export default function AuditDetail() {
                 <span style={{ width: `${(liveScore.answered / Math.max(1, liveScore.total)) * 100}%` }} />
               </div>
               <div className="small muted" style={{ marginTop: 6 }}>
-                {liveScore.answered}/{liveScore.total} madde puanlandı
+                {t('au.scored.items', { done: liveScore.answered, total: liveScore.total })}
               </div>
               <div className="small muted" style={{ marginTop: 12, lineHeight: 1.7 }}>
-                Not eşikleri: <strong>A</strong> ≥85 · <strong>B</strong> ≥70 · <strong>C</strong> ≥55 · <strong>D</strong> &lt;55
+                {t('au.thresholds')} <strong>A</strong> ≥85 · <strong>B</strong> ≥70 · <strong>C</strong> ≥55 · <strong>D</strong> &lt;55
               </div>
             </div>
 
             <div className="card">
-              <div className="card-title">Denetim bilgileri</div>
+              <div className="card-title">{t('au.info')}</div>
               <dl className="kv">
-                <dt>Durum</dt>
+                <dt>{t('a.status')}</dt>
                 <dd>
-                  <Badge tone={tone(AUDIT_STATUS, audit.status)}>{label(AUDIT_STATUS, audit.status)}</Badge>
+                  <Badge tone={tone(AUDIT_STATUS, audit.status)}>{label(AUDIT_STATUS, audit.status, lang)}</Badge>
                 </dd>
-                <dt>Denetçi</dt>
+                <dt>{t('au.auditor')}</dt>
                 <dd>{audit.auditor_name ?? '—'}</dd>
-                <dt>Planlanan tarih</dt>
-                <dd>{formatDate(audit.planned_date)}</dd>
-                <dt>Yöntem</dt>
-                <dd>{label(AUDIT_METHOD, audit.method)}</dd>
-                <dt>Tamamlanma</dt>
-                <dd>{formatDate(audit.completed_at, true)}</dd>
+                <dt>{t('au.planned.date')}</dt>
+                <dd>{formatDate(audit.planned_date, false, lang)}</dd>
+                <dt>{t('au.method')}</dt>
+                <dd>{label(AUDIT_METHOD, audit.method, lang)}</dd>
+                <dt>{t('au.completed.date')}</dt>
+                <dd>{formatDate(audit.completed_at, true, lang)}</dd>
               </dl>
             </div>
 
             <div className="card">
-              <div className="card-title">İşlem geçmişi</div>
+              <div className="card-title">{t('a.history')}</div>
               <div className="timeline">
                 {audit.activity.map((a, i) => (
                   <div className={`timeline-item ${i > 0 ? 'muted-dot' : ''}`} key={a.id}>
@@ -370,7 +370,7 @@ export default function AuditDetail() {
                       {a.to_value && <>: {a.to_value}</>}
                       {a.detail && <div className="muted">{a.detail}</div>}
                       <div className="who">
-                        {a.actor_label} · {formatDate(a.created_at, true)}
+                        {a.actor_label} · {formatDate(a.created_at, true, lang)}
                       </div>
                     </div>
                   </div>
@@ -384,7 +384,7 @@ export default function AuditDetail() {
       {/* -------------------------------- Planla -------------------------------- */}
       {planModal && (
         <Modal
-          title="Denetimi planla"
+          title={t('au.plan.title')}
           size="sm"
           onClose={() => setPlanModal(false)}
           footer={
@@ -392,7 +392,7 @@ export default function AuditDetail() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setPlanModal(false)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={savePlan} disabled={busy} type="button">
                   {busy && <span className="spinner" />} Kaydet
@@ -403,21 +403,21 @@ export default function AuditDetail() {
         >
           <div className="stack">
             <div className="field">
-              <label>Planlanan tarih</label>
+              <label>{t('au.planned.date')}</label>
               <input type="date" value={plan.planned_date} onChange={(e) => setPlan({ ...plan, planned_date: e.target.value })} />
             </div>
             <div className="field">
-              <label>Denetim yöntemi</label>
+              <label>{t('au.method.label')}</label>
               <select value={plan.method} onChange={(e) => setPlan({ ...plan, method: e.target.value })}>
-                <option value="ONSITE">Yerinde denetim</option>
-                <option value="REMOTE">Uzaktan denetim</option>
-                <option value="DESKTOP">Masa başı değerlendirme</option>
+                <option value="ONSITE">{t('au.method.onsite')}</option>
+                <option value="REMOTE">{t('au.method.remote')}</option>
+                <option value="DESKTOP">{t('au.method.desktop')}</option>
               </select>
             </div>
             <div className="field">
-              <label>Denetçi</label>
+              <label>{t('au.auditor')}</label>
               <select value={plan.auditor_id} onChange={(e) => setPlan({ ...plan, auditor_id: e.target.value })}>
-                <option value="">Atanmadı</option>
+                <option value="">{t('a.unassigned')}</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.full_name}
@@ -433,7 +433,7 @@ export default function AuditDetail() {
       {/* ------------------------------- Tamamla -------------------------------- */}
       {completeModal && (
         <Modal
-          title="Denetimi tamamla"
+          title={t('au.complete.title')}
           size="sm"
           onClose={() => setCompleteModal(false)}
           footer={
@@ -441,7 +441,7 @@ export default function AuditDetail() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setCompleteModal(false)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={complete} disabled={busy} type="button">
                   {busy && <span className="spinner" />} Tamamla
@@ -456,29 +456,29 @@ export default function AuditDetail() {
                 {liveScore.score}
               </span>
               <Grade grade={completion.grade_override || projectedGrade} />
-              <span className="small muted">Hesaplanan not: {projectedGrade}</span>
+              <span className="small muted">{t('au.computed.grade')}: {projectedGrade}</span>
             </div>
 
             <div className="field">
-              <label>Güçlü yönler</label>
+              <label>{t('au.strengths')}</label>
               <textarea rows={3} value={completion.strengths} onChange={(e) => setCompletion({ ...completion, strengths: e.target.value })} />
             </div>
             <div className="field">
-              <label>Bulgular / iyileştirme alanları</label>
+              <label>{t('au.findings')}</label>
               <textarea rows={3} value={completion.findings} onChange={(e) => setCompletion({ ...completion, findings: e.target.value })} />
             </div>
             <div className="field">
-              <label>Öneri</label>
+              <label>{t('au.recommendation')}</label>
               <select value={completion.recommendation} onChange={(e) => setCompletion({ ...completion, recommendation: e.target.value })}>
                 {Object.keys(RECOMMENDATION).map((r) => (
                   <option key={r} value={r}>
-                    {label(RECOMMENDATION, r)}
+                    {label(RECOMMENDATION, r, lang)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="field">
-              <label>Notu elle değiştir (opsiyonel)</label>
+              <label>{t('au.override')}</label>
               <select value={completion.grade_override} onChange={(e) => setCompletion({ ...completion, grade_override: e.target.value })}>
                 <option value="">Hesaplanan notu kullan ({projectedGrade})</option>
                 {['A', 'B', 'C', 'D'].map((g) => (
@@ -491,7 +491,7 @@ export default function AuditDetail() {
             {completion.grade_override && (
               <div className="field">
                 <label>
-                  Değiştirme gerekçesi <span className="req">*</span>
+                  {t('au.override.reason')} <span className="req">*</span>
                 </label>
                 <textarea rows={2} value={completion.override_reason} onChange={(e) => setCompletion({ ...completion, override_reason: e.target.value })} />
               </div>

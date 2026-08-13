@@ -2,28 +2,38 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
+import { useI18n, type TranslationKey } from '../../i18n';
+import { LangToggle } from '../public/PublicShell';
 import { ROLE, label } from '../../lib/labels';
 
 type Counts = { tasks: number; audits: number; ncrs: number; applications: number };
 
-const NAV = [
-  { to: '/yonetim', end: true, label: 'Panom', key: null },
-  { to: '/yonetim/gorevler', label: 'İş Sıram', key: 'tasks' as const },
-  { to: '/yonetim/basvurular', label: 'Başvurular', key: 'applications' as const },
-  { to: '/yonetim/denetimler', label: 'Denetimler', key: 'audits' as const },
-  { to: '/yonetim/tedarikciler', label: 'Tedarikçiler', key: null },
-  { to: '/yonetim/sozlesmeler', label: 'Sözleşmeler', key: null },
-  { to: '/yonetim/uygunsuzluklar', label: 'Uygunsuzluklar', key: 'ncrs' as const },
+const NAV: Array<{
+  to?: string;
+  end?: boolean;
+  label?: TranslationKey;
+  key?: 'tasks' | 'applications' | 'audits' | 'ncrs' | null;
+  roles?: string[];
+  group?: TranslationKey;
+}> = [
+  { to: '/yonetim', end: true, label: 'nav.dashboard', key: null },
+  { to: '/yonetim/gorevler', label: 'nav.tasks', key: 'tasks' },
+  { to: '/yonetim/basvurular', label: 'nav.applications', key: 'applications' },
+  { to: '/yonetim/denetimler', label: 'nav.audits', key: 'audits' },
+  { to: '/yonetim/tedarikciler', label: 'nav.suppliers', key: null },
+  { to: '/yonetim/sozlesmeler', label: 'nav.contracts', key: null },
+  { to: '/yonetim/uygunsuzluklar', label: 'nav.ncrs', key: 'ncrs' },
 
-  { group: 'Sistem' },
-  { to: '/yonetim/bildirimler', label: 'E-posta Kutusu', key: null },
-  { to: '/yonetim/kullanicilar', label: 'Kullanıcılar', key: null, roles: ['ADMIN'] },
-  { to: '/yonetim/ayarlar', label: 'Ayarlar', key: null },
+  { group: 'nav.system' },
+  { to: '/yonetim/bildirimler', label: 'nav.outbox', key: null },
+  { to: '/yonetim/kullanicilar', label: 'nav.users', key: null, roles: ['ADMIN'] },
+  { to: '/yonetim/ayarlar', label: 'nav.settings', key: null },
 ];
 
 export default function AdminLayout() {
   const { user, logout, can } = useAuth();
   const navigate = useNavigate();
+  const { t, lang } = useI18n();
   const [counts, setCounts] = useState<Counts>({ tasks: 0, audits: 0, ncrs: 0, applications: 0 });
 
   useEffect(() => {
@@ -58,10 +68,10 @@ export default function AdminLayout() {
 
         <nav className="sidebar-nav">
           {NAV.map((item, i) => {
-            if ('group' in item && item.group) {
+            if (item.group) {
               return (
                 <div className="group" key={`g-${i}`}>
-                  {item.group}
+                  {t(item.group)}
                 </div>
               );
             }
@@ -69,7 +79,7 @@ export default function AdminLayout() {
             const count = item.key ? counts[item.key] : 0;
             return (
               <NavLink key={item.to} to={item.to!} end={item.end} className={({ isActive }) => (isActive ? 'active' : '')}>
-                {item.label}
+                {t(item.label!)}
                 {count > 0 && <span className="count">{count}</span>}
               </NavLink>
             );
@@ -78,7 +88,7 @@ export default function AdminLayout() {
 
         <div className="sidebar-user">
           <div className="name">{user?.full_name}</div>
-          <div className="role">{label(ROLE, user?.role)}</div>
+          <div className="role">{label(ROLE, user?.role, lang)}</div>
           <button
             className="btn btn-sm"
             style={{ marginTop: 10, width: '100%', justifyContent: 'center' }}
@@ -88,7 +98,7 @@ export default function AdminLayout() {
             }}
             type="button"
           >
-            Çıkış yap
+            {t('admin.logout')}
           </button>
         </div>
       </aside>
@@ -116,7 +126,10 @@ export function TopBar({
         <h1>{title}</h1>
         {subtitle && <div className="sub">{subtitle}</div>}
       </div>
-      {actions && <div className="row wrap">{actions}</div>}
+      <div className="row wrap">
+        {actions}
+        <LangToggle />
+      </div>
     </header>
   );
 }

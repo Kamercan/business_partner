@@ -16,8 +16,17 @@ export type TaskType =
  */
 export function createTask(params: {
   type: TaskType;
+  /** Türkçe başlık — dışa aktarım ve eski kayıtlarla uyum için saklanır. */
   title: string;
   description?: string | null;
+  /**
+   * Başlığın veri kısmı (genellikle firma adı). Arayüz başlığı
+   * "<görev türü seçili dilde>: <subject>" olarak kurar.
+   */
+  subject?: string | null;
+  /** Açıklamanın çeviri anahtarı ve yerine konacak değerler. */
+  detailKey?: string | null;
+  detailParams?: Record<string, string | number> | null;
   entityType: 'APPLICATION' | 'SUPPLIER' | 'AUDIT' | 'CONTRACT' | 'NCR';
   entityId: number;
   assignedRole: Role;
@@ -41,13 +50,17 @@ export function createTask(params: {
 
   const res = db
     .prepare(
-      `INSERT INTO tasks (type, title, description, entity_type, entity_id, assigned_role, assigned_to, priority, due_date, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO tasks (type, title, description, subject, detail_key, detail_params,
+                          entity_type, entity_id, assigned_role, assigned_to, priority, due_date, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       params.type,
       params.title,
       params.description ?? null,
+      params.subject ?? null,
+      params.detailKey ?? null,
+      params.detailParams ? JSON.stringify(params.detailParams) : null,
       params.entityType,
       params.entityId,
       params.assignedRole,

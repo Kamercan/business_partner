@@ -4,41 +4,43 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Loading, Modal, useToast } from '../../components/ui';
 import { useMeta } from '../../hooks/useMeta';
 import { formatDate } from '../../lib/labels';
+import { useI18n } from '../../i18n';
 import { TopBar } from './AdminLayout';
 
 type Setting = { key: string; value: string; updated_at: string };
 
-const GROUPS: Array<{ title: string; hint: string; keys: Array<{ key: string; label: string; type?: string; hint?: string }> }> = [
+const GROUPS = [
   {
-    title: 'Kalite notu eşikleri',
-    hint: 'Denetim puanının hangi aralıkta hangi nota karşılık geldiğini belirler.',
+    title: 'se.grades',
+    hint: 'se.grades.hint',
     keys: [
-      { key: 'grade.threshold.A', label: 'A notu için minimum puan', type: 'number' },
-      { key: 'grade.threshold.B', label: 'B notu için minimum puan', type: 'number' },
-      { key: 'grade.threshold.C', label: 'C notu için minimum puan', type: 'number' },
+      { key: 'grade.threshold.A', label: 'se.grade.a', type: 'number' },
+      { key: 'grade.threshold.B', label: 'se.grade.b', type: 'number' },
+      { key: 'grade.threshold.C', label: 'se.grade.c', type: 'number' },
     ],
   },
   {
-    title: 'Hedef süreler (SLA)',
-    hint: 'Görev terminleri ve panodaki gecikme uyarıları bu değerlere göre hesaplanır.',
+    title: 'se.sla',
+    hint: 'se.sla.hint',
     keys: [
-      { key: 'sla.review_days', label: 'Ön değerlendirme (gün)', type: 'number' },
-      { key: 'sla.audit_days', label: 'Denetim tamamlama (gün)', type: 'number' },
-      { key: 'sla.ncr_response_days', label: 'Uygunsuzluk cevabı (gün)', type: 'number' },
-      { key: 'contract.renewal_notice_days', label: 'Sözleşme yenileme hatırlatması (gün)', type: 'number' },
+      { key: 'sla.review_days', label: 'se.sla.review', type: 'number' },
+      { key: 'sla.audit_days', label: 'se.sla.audit', type: 'number' },
+      { key: 'sla.ncr_response_days', label: 'se.sla.ncr', type: 'number' },
+      { key: 'contract.renewal_notice_days', label: 'se.sla.contract', type: 'number' },
     ],
   },
   {
-    title: 'Kurum bilgileri',
-    hint: 'Form, e-posta ve raporlarda görünen kurum adı.',
+    title: 'se.org',
+    hint: 'se.org.hint',
     keys: [
-      { key: 'org.name', label: 'Resmî unvan' },
-      { key: 'org.short', label: 'Kısa ad' },
+      { key: 'org.name', label: 'se.org.legal' },
+      { key: 'org.short', label: 'se.org.short' },
     ],
   },
-];
+] as const;
 
 export default function Settings() {
+  const { t, lang, pick } = useI18n();
   const toast = useToast();
   const meta = useMeta();
   const { can } = useAuth();
@@ -91,12 +93,12 @@ export default function Settings() {
         sort_order: 50,
         is_active: true,
       });
-      toast.push('Ürün grubu eklendi. Başvuru formunda hemen görünür.', 'ok');
+      toast.push(t('se.taxonomy.added'), 'ok');
       setCatModal(false);
       setCat({ code: '', name_tr: '', name_en: '', name_ja: '', hint_tr: '', hint_en: '', hint_ja: '' });
       window.location.reload();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Eklenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.create.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -106,11 +108,11 @@ export default function Settings() {
     setBusy(true);
     try {
       await api.post('/auth/change-password', pw);
-      toast.push('Şifreniz güncellendi.', 'ok');
+      toast.push(t('se.password.ok'), 'ok');
       setPwModal(false);
       setPw({ current_password: '', new_password: '' });
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Güncellenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.update.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -119,7 +121,7 @@ export default function Settings() {
   if (!settings) {
     return (
       <>
-        <TopBar title="Ayarlar" />
+        <TopBar title={t('se.title')} />
         <div className="admin-content">
           <Loading />
         </div>
@@ -130,16 +132,16 @@ export default function Settings() {
   return (
     <>
       <TopBar
-        title="Ayarlar"
-        subtitle="Sistem parametreleri ve taksonomi yönetimi"
+        title={t('se.title')}
+        subtitle={t('se.subtitle')}
         actions={
           <>
             <button className="btn" onClick={() => setPwModal(true)} type="button">
-              Şifremi değiştir
+              {t('se.password.change')}
             </button>
             {can('ADMIN') && (
               <button className="btn btn-primary" onClick={save} disabled={busy} type="button">
-                {busy && <span className="spinner" />} Ayarları kaydet
+                {busy && <span className="spinner" />} {t('se.save')}
               </button>
             )}
           </>
@@ -151,16 +153,16 @@ export default function Settings() {
           <div className="stack">
             {GROUPS.map((group) => (
               <div className="card" key={group.title}>
-                <div className="card-title">{group.title}</div>
+                <div className="card-title">{t(group.title)}</div>
                 <p className="small muted" style={{ marginBottom: 14 }}>
-                  {group.hint}
+                  {t(group.hint)}
                 </p>
                 <div className="grid-2">
                   {group.keys.map((k) => (
                     <div className="field" key={k.key}>
-                      <label>{k.label}</label>
+                      <label>{t(k.label)}</label>
                       <input
-                        type={k.type ?? 'text'}
+                        type={'type' in k ? k.type : 'text'}
                         value={draft[k.key] ?? ''}
                         disabled={!can('ADMIN')}
                         onChange={(e) => setDraft({ ...draft, [k.key]: e.target.value })}
@@ -178,7 +180,7 @@ export default function Settings() {
           <div className="stack">
             <div className="card">
               <div className="card-title">
-                Ürün grupları ({meta?.categories.length ?? 0})
+                {t('se.taxonomy')} ({meta?.categories.length ?? 0})
                 {can('ADMIN') && (
                   <button className="btn btn-sm" onClick={() => setCatModal(true)} type="button">
                     + Ekle
@@ -186,20 +188,19 @@ export default function Settings() {
                 )}
               </div>
               <p className="small muted" style={{ marginBottom: 12 }}>
-                Başvuru formundaki çoklu seçim listesi. Buraya eklediğiniz grup, kod değişikliği gerektirmeden forma ve
-                filtrelere yansır.
+                {t('se.taxonomy.hint')}
               </p>
               <div className="cat-tags" style={{ maxWidth: 'none' }}>
                 {meta?.categories.map((c) => (
-                  <span className="cat-tag" key={c.code} title={c.hint_tr ?? undefined}>
-                    {c.name_tr}
+                  <span className="cat-tag" key={c.code} title={pick(c, 'hint') || undefined}>
+                    {pick(c)}
                   </span>
                 ))}
               </div>
             </div>
 
             <div className="card">
-              <div className="card-title">Kalite sertifikaları ({meta?.certifications.length ?? 0})</div>
+              <div className="card-title">{t('ad.certs')} ({meta?.certifications.length ?? 0})</div>
               <div className="cat-tags" style={{ maxWidth: 'none' }}>
                 {meta?.certifications.map((c) => (
                   <span className="cat-tag" key={c.code}>
@@ -210,14 +211,14 @@ export default function Settings() {
             </div>
 
             <div className="card">
-              <div className="card-title">Ham ayar kayıtları</div>
+              <div className="card-title">{t('se.raw')}</div>
               <div className="table-scroll">
                 <table className="data">
                   <thead>
                     <tr>
-                      <th>Anahtar</th>
-                      <th>Değer</th>
-                      <th>Güncelleme</th>
+                      <th>{t('se.key')}</th>
+                      <th>{t('se.value')}</th>
+                      <th>{t('se.updated')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -225,7 +226,7 @@ export default function Settings() {
                       <tr key={s.key}>
                         <td className="mono small">{s.key}</td>
                         <td className="small">{s.value}</td>
-                        <td className="small muted tight">{formatDate(s.updated_at, true)}</td>
+                        <td className="small muted tight">{formatDate(s.updated_at, true, lang)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -238,7 +239,7 @@ export default function Settings() {
 
       {catModal && (
         <Modal
-          title="Yeni ürün grubu"
+          title={t('se.taxonomy.new')}
           size="sm"
           onClose={() => setCatModal(false)}
           footer={
@@ -246,7 +247,7 @@ export default function Settings() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setCatModal(false)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={addCategory} disabled={busy || !cat.code || !cat.name_tr} type="button">
                   {busy && <span className="spinner" />} Ekle
@@ -265,25 +266,25 @@ export default function Settings() {
                 onChange={(e) => setCat({ ...cat, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
                 placeholder="kaynak_montaj"
               />
-              <span className="hint">Küçük harf, rakam ve alt çizgi. Sonradan değiştirilemez.</span>
+              <span className="hint">{t('se.code.hint')}</span>
             </div>
             <div className="field">
               <label>
-                Türkçe adı <span className="req">*</span>
+                {t('se.name.tr')} <span className="req">*</span>
               </label>
-              <input value={cat.name_tr} onChange={(e) => setCat({ ...cat, name_tr: e.target.value })} placeholder="Kaynaklı Montaj Grupları" />
+              <input value={cat.name_tr} onChange={(e) => setCat({ ...cat, name_tr: e.target.value })} placeholder={t('se.taxonomy.ph')} />
             </div>
             <div className="field">
-              <label>İngilizce adı</label>
+              <label>{t('se.name.en')}</label>
               <input value={cat.name_en} onChange={(e) => setCat({ ...cat, name_en: e.target.value })} placeholder="Welded Assembly Groups" />
             </div>
             <div className="field">
-              <label>Japonca adı</label>
+              <label>{t('se.name.ja')}</label>
               <input value={cat.name_ja} onChange={(e) => setCat({ ...cat, name_ja: e.target.value })} placeholder="溶接組立ユニット" />
-              <span className="hint">Boş bırakılırsa Japonca arayüzde İngilizce adı görünür.</span>
+              <span className="hint">{t('se.name.ja.hint')}</span>
             </div>
             <div className="field">
-              <label>Açıklama (form üzerindeki ipucu)</label>
+              <label>{t('se.hint.field')}</label>
               <textarea rows={2} value={cat.hint_tr} onChange={(e) => setCat({ ...cat, hint_tr: e.target.value })} />
             </div>
           </div>
@@ -292,7 +293,7 @@ export default function Settings() {
 
       {pwModal && (
         <Modal
-          title="Şifre değiştir"
+          title={t('se.password.title')}
           size="sm"
           onClose={() => setPwModal(false)}
           footer={
@@ -300,7 +301,7 @@ export default function Settings() {
               <span />
               <div className="row">
                 <button className="btn" onClick={() => setPwModal(false)} type="button">
-                  Vazgeç
+                  {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={changePassword} disabled={busy || pw.new_password.length < 8} type="button">
                   {busy && <span className="spinner" />} Kaydet
@@ -311,13 +312,13 @@ export default function Settings() {
         >
           <div className="stack">
             <div className="field">
-              <label>Mevcut şifre</label>
+              <label>{t('se.password.current')}</label>
               <input type="password" value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} />
             </div>
             <div className="field">
-              <label>Yeni şifre</label>
+              <label>{t('se.password.new')}</label>
               <input type="password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} />
-              <span className="hint">En az 8 karakter, harf ve rakam içermeli.</span>
+              <span className="hint">{t('se.password.rule')}</span>
             </div>
           </div>
         </Modal>

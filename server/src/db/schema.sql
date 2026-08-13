@@ -191,8 +191,13 @@ CREATE TABLE IF NOT EXISTS tasks (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   type           TEXT NOT NULL CHECK (type IN ('REVIEW_APPLICATION','PERFORM_AUDIT','REVIEW_NCR_RESPONSE',
                                                'CONTRACT_RENEWAL','SUPPLIER_INFO_REQUEST','REVIEW_DOCUMENT')),
+  -- title/description Türkçe olarak da yazılır (eski kayıtlar ve dışa aktarım için).
+  -- Arayüz, dile duyarlı gösterim için subject + detail_key/detail_params kullanır.
   title          TEXT NOT NULL,
   description    TEXT,
+  subject        TEXT,
+  detail_key     TEXT,
+  detail_params  TEXT,
   entity_type    TEXT NOT NULL CHECK (entity_type IN ('APPLICATION','SUPPLIER','AUDIT','CONTRACT','NCR')),
   entity_id      INTEGER NOT NULL,
   assigned_role  TEXT NOT NULL CHECK (assigned_role IN ('ADMIN','MODERATOR','QUALITY','VIEWER')),

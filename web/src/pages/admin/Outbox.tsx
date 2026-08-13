@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { Badge, EmptyState, Loading, Modal, Pagination } from '../../components/ui';
 import { formatDate } from '../../lib/labels';
-import { MAIL_LINK_NOTE, extractLinks } from '../../lib/mailLinks';
+import { extractLinks } from '../../lib/mailLinks';
+import { useI18n } from '../../i18n';
 import { TopBar } from './AdminLayout';
 
 type Mail = {
@@ -35,19 +36,20 @@ const STATUS_TONE: Record<string, 'ok' | 'warn' | 'danger' | 'neutral'> = {
   LOGGED: 'neutral',
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  SENT: 'Gönderildi',
-  QUEUED: 'Kuyrukta',
-  FAILED: 'Başarısız',
-  LOGGED: 'Kaydedildi',
-};
+const STATUS_KEY = {
+  SENT: 'ob.status.SENT',
+  QUEUED: 'ob.status.QUEUED',
+  FAILED: 'ob.status.FAILED',
+  LOGGED: 'ob.status.LOGGED',
+} as const;
 
 const TABS = [
-  { key: 'INTERNAL', label: 'Ekibe gelen bildirimler', hint: 'Yanmar kullanıcılarına düşen sistem bildirimleri' },
-  { key: 'SUPPLIER', label: 'Tedarikçilere gönderilen', hint: 'Tedarikçilere giden yazışmalar' },
+  { key: 'INTERNAL', label: 'ob.internal', hint: 'ob.internal.hint' },
+  { key: 'SUPPLIER', label: 'ob.supplier', hint: 'ob.supplier.hint' },
 ] as const;
 
 export default function Outbox() {
+  const { t, lang } = useI18n();
   const [audience, setAudience] = useState<'INTERNAL' | 'SUPPLIER'>('SUPPLIER');
   const [data, setData] = useState<Response | null>(null);
   const [page, setPage] = useState(1);
@@ -66,7 +68,7 @@ export default function Outbox() {
 
   return (
     <>
-      <TopBar title="E-posta Kutusu" subtitle="Sistemin ürettiği bildirimler — gelen ve giden ayrı ayrı" />
+      <TopBar title={t('ob.title')} subtitle={t('ob.subtitle')} />
       <div className="admin-content">
         <div className="tabs">
           {TABS.map((tab) => (
@@ -79,31 +81,31 @@ export default function Outbox() {
                 setPage(1);
               }}
             >
-              {tab.label}
+              {t(tab.label)}
               {data && <span className="muted"> ({tab.key === 'INTERNAL' ? data.counts.internal : data.counts.supplier})</span>}
             </button>
           ))}
         </div>
 
         <p className="small muted" style={{ marginBottom: 14 }}>
-          {active.hint}
+          {t(active.hint)}
         </p>
 
         <div className="table-wrap">
           {!data ? (
             <Loading />
           ) : data.rows.length === 0 ? (
-            <EmptyState title="Bu kutuda bildirim yok" />
+            <EmptyState title={t('ob.empty')} />
           ) : (
             <>
               <div className="table-scroll">
                 <table className="data">
                   <thead>
                     <tr>
-                      <th>{audience === 'INTERNAL' ? 'Alıcı (ekip)' : 'Alıcı (tedarikçi)'}</th>
-                      <th>Konu</th>
-                      <th>Durum</th>
-                      <th>Tarih</th>
+                      <th>{audience === 'INTERNAL' ? t('ob.to.team') : t('ob.to.supplier')}</th>
+                      <th>{t('a.subject')}</th>
+                      <th>{t('a.status')}</th>
+                      <th>{t('a.date')}</th>
                       <th />
                     </tr>
                   </thead>
@@ -113,17 +115,19 @@ export default function Outbox() {
                         <td className="small">{m.to_email}</td>
                         <td>{m.subject}</td>
                         <td className="tight">
-                          <Badge tone={STATUS_TONE[m.status] ?? 'neutral'}>{STATUS_LABEL[m.status] ?? m.status}</Badge>
+                          <Badge tone={STATUS_TONE[m.status] ?? 'neutral'}>
+                            {m.status in STATUS_KEY ? t(STATUS_KEY[m.status as keyof typeof STATUS_KEY]) : m.status}
+                          </Badge>
                           {m.error && <div className="small" style={{ color: 'var(--brand)' }}>{m.error}</div>}
                         </td>
-                        <td className="tight small">{formatDate(m.created_at, true)}</td>
+                        <td className="tight small">{formatDate(m.created_at, true, lang)}</td>
                         <td className="tight">
                           <button
                             className="btn btn-sm"
                             type="button"
                             onClick={() => api.get<Mail>(`/admin/stats/outbox/${m.id}`).then(setPreview).catch(() => undefined)}
                           >
-                            Aç
+                            {t('a.open')}
                           </button>
                         </td>
                       </tr>
@@ -138,11 +142,11 @@ export default function Outbox() {
       </div>
 
       {preview && (
-        <Modal title={preview.subject} subtitle={`Alıcı: ${preview.to_email}`} onClose={() => setPreview(null)}>
+        <Modal title={preview.subject} subtitle={`${t('ob.recipient')}: ${preview.to_email}`} onClose={() => setPreview(null)}>
           {links.length > 0 && (
             <div className="mail-links">
               <div className="section-label" style={{ marginBottom: 8 }}>
-                E-postadaki bağlantılar
+                {t('mail.links.title')}
               </div>
               {links.map((l) => (
                 <a key={l.href} className="btn btn-sm" href={l.href} target="_blank" rel="noreferrer noopener">
@@ -150,13 +154,13 @@ export default function Outbox() {
                 </a>
               ))}
               <div className="small muted" style={{ marginTop: 8, width: '100%' }}>
-                {MAIL_LINK_NOTE}
+                {t('mail.links.note')}
               </div>
             </div>
           )}
 
           <iframe
-            title="E-posta önizleme"
+            title={t('mail.preview')}
             srcDoc={preview.body_html}
             sandbox=""
             style={{ width: '100%', height: 460, border: '1px solid var(--line)', borderRadius: 6, background: '#fff' }}
