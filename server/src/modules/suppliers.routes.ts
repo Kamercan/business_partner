@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { db } from '../db/index.js';
 import { getActivity, logActivity } from '../lib/activity.js';
 import { buildSimpleWorkbook } from '../lib/excel.js';
-import { ah, badRequest, notFound, parse } from '../lib/http.js';
+import { ah, badRequest, forbidden, notFound, parse } from '../lib/http.js';
+import type { Role } from '../lib/constants.js';
 import { randomToken, sha256 } from '../lib/ids.js';
 import { notifyPortalInvite } from '../lib/notifications.js';
 import { actorOf, requireAuth, requireRole } from '../middleware/auth.js';
@@ -201,6 +202,28 @@ const patchSchema = z.object({
   categories: z.array(z.string().max(40)).max(30).optional(),
 });
 
+/**
+ * Tedarikçi kartı iki birimin ortak kaydıdır ama alanların sahibi ayrıdır:
+ * ticari ilişki ve iletişim bilgisi satınalmanın, kalite performansı
+ * (not, PPM, termininde teslim, sonraki denetim) kalitenin alanıdır. Her birim
+ * yalnızca kendi alanlarını yazabilir; diğerini görür, değiştiremez.
+ */
+const SUPPLIER_FIELD_OWNER: Record<string, Role[]> = {
+  status: ['MODERATOR'],
+  contact_name: ['MODERATOR'],
+  email: ['MODERATOR'],
+  phone: ['MODERATOR'],
+  website: ['MODERATOR'],
+  city: ['MODERATOR'],
+  categories: ['MODERATOR'],
+  grade: ['QUALITY'],
+  otd_percent: ['QUALITY'],
+  ppm: ['QUALITY'],
+  next_audit_due: ['QUALITY'],
+  // Not alanı ortak çalışma alanıdır.
+  notes: ['MODERATOR', 'QUALITY'],
+};
+
 supplierRoutes.patch(
   '/:id',
   requireRole('MODERATOR', 'QUALITY'),
@@ -211,6 +234,13 @@ supplierRoutes.patch(
       | { id: number; status: string; grade: string | null }
       | undefined;
     if (!supplier) throw notFound('Tedarikçi bulunamadı.');
+
+    if (req.user!.role !== 'ADMIN') {
+      const blocked = Object.entries(body)
+        .filter(([k, v]) => v !== undefined && !(SUPPLIER_FIELD_OWNER[k] ?? []).includes(req.user!.role))
+        .map(([k]) => k);
+      if (blocked.length) throw forbidden(`Bu alanlar başka bir birimin yetkisindedir: ${blocked.join(', ')}`);
+    }
 
     const { categories, ...fields } = body;
     const updates: string[] = [];

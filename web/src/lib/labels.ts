@@ -179,7 +179,7 @@ export const STATUS_ACTION: Record<string, LabelDef & { variant?: 'primary' | 'd
   APPROVED: { tr: 'Onaylı tedarikçi yap', en: 'Make an approved supplier', ja: '承認サプライヤーにする', tone: 'neutral', variant: 'primary' },
   ON_HOLD: { tr: 'Beklemeye al', en: 'Put on hold', ja: '保留にする', tone: 'neutral' },
   REJECTED: { tr: 'Reddet', en: 'Reject', ja: '不採用にする', tone: 'neutral', variant: 'danger' },
-  DISQUALIFIED: { tr: 'Ele', en: 'Disqualify', ja: '資格なしとする', tone: 'neutral', variant: 'danger' },
+  DISQUALIFIED: { tr: 'Elemeye al', en: 'Disqualify', ja: '資格なしとする', tone: 'neutral', variant: 'danger' },
   NEEDS_INFO: { tr: 'Bilgi bekleniyor işaretle', en: 'Mark as awaiting info', ja: '情報待ちにする', tone: 'neutral' },
   AUDIT_PLANNED: { tr: 'Denetim planlandı', en: 'Audit planned', ja: '監査を計画済みにする', tone: 'neutral' },
   AUDIT_IN_PROGRESS: { tr: 'Denetim başladı', en: 'Audit started', ja: '監査を開始する', tone: 'neutral' },

@@ -44,6 +44,13 @@ export const APPLICATION_SOURCES = ['WEB_FORM'] as const;
 export const ROLES = ['ADMIN', 'MODERATOR', 'QUALITY', 'VIEWER'] as const;
 export type Role = (typeof ROLES)[number];
 
+/**
+ * Başvuruda yüklenmesi zorunlu belgeler. Tek kaynak burasıdır: form bu listeyi
+ * `/meta` üzerinden okur, sunucu da gönderimde aynı listeye göre denetler.
+ * Politika değişirse yalnızca bu satır düzenlenir.
+ */
+export const REQUIRED_DOCUMENT_KINDS = ['PRESENTATION', 'CATALOG', 'ISO9001'] as const;
+
 export const DOCUMENT_KINDS = [
   'PRESENTATION',
   'CATALOG',
@@ -72,6 +79,28 @@ export const STATUS_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> 
   APPROVED: ['ON_HOLD'],
   REJECTED: ['IN_REVIEW'],
   DISQUALIFIED: ['AUDIT_PENDING'],
+};
+
+/**
+ * Hangi durum geçişini hangi birim yapabilir.
+ *
+ * Satınalma ile kalite biriminin sorumlulukları ayrıdır: "kaliteye gönder" ve
+ * "onaylı tedarikçi yap" kararları satınalmanındır, denetim aşamaları kalite
+ * birimininidir. Arayüz butonları da bu tablodan üretilir, böylece ekranda
+ * görünen yetki ile sunucunun uyguladığı yetki asla ayrışmaz.
+ */
+export const STATUS_ROLES: Record<ApplicationStatus, Role[]> = {
+  NEW: ['MODERATOR'],
+  IN_REVIEW: ['MODERATOR'],
+  NEEDS_INFO: ['MODERATOR'],
+  ON_HOLD: ['MODERATOR'],
+  AUDIT_PENDING: ['MODERATOR'],
+  AUDIT_PLANNED: ['QUALITY'],
+  AUDIT_IN_PROGRESS: ['QUALITY'],
+  AUDIT_DONE: ['QUALITY'],
+  APPROVED: ['MODERATOR'],
+  REJECTED: ['MODERATOR'],
+  DISQUALIFIED: ['MODERATOR'],
 };
 
 /** Kalite notu eşikleri (settings tablosundan override edilebilir). */

@@ -21,7 +21,8 @@ const NAV: Array<{
   { to: '/yonetim/basvurular', label: 'nav.applications', key: 'applications' },
   { to: '/yonetim/denetimler', label: 'nav.audits', key: 'audits' },
   { to: '/yonetim/tedarikciler', label: 'nav.suppliers', key: null },
-  { to: '/yonetim/sozlesmeler', label: 'nav.contracts', key: null },
+  // Sözleşme yönetimi satınalmanın alanıdır; kalite biriminin menüsünde yer almaz.
+  { to: '/yonetim/sozlesmeler', label: 'nav.contracts', key: null, roles: ['ADMIN', 'MODERATOR'] },
   { to: '/yonetim/uygunsuzluklar', label: 'nav.ncrs', key: 'ncrs' },
 
   { group: 'nav.system' },

@@ -51,9 +51,9 @@ Aynı firma 24 saat içinde tekrar başvurursa `409 CONFLICT`.
 |---|---|---|---|
 | `GET` | `/` | tümü | Filtreli liste |
 | `GET` | `/export` | tümü | Excel (aynı filtreler) |
-| `GET` | `/:id` | tümü | Detay + belgeler, denetimler, notlar, izin verilen geçişler |
-| `PATCH` | `/:id` | MOD/QUA | Sorumlu, öncelik, karar notu |
-| `POST` | `/:id/status` | MOD/QUA | Durum geçişi (iş akışını tetikler) |
+| `GET` | `/:id` | tümü | Detay + belgeler, denetimler, notlar; `allowedTransitions` **role göre süzülür**, `stageOwner` aşamanın sorumlusunu döner |
+| `PATCH` | `/:id` | MOD/QUA | Öncelik, karar notu (**sorumlu buradan değiştirilemez** — üstlenmeyle belirlenir) |
+| `POST` | `/:id/status` | MOD/QUA | Durum geçişi (iş akışını tetikler); hedef durumun sahibi olmayan birim `403` alır (`STATUS_ROLES`) |
 | `POST` | `/bulk-status` | MOD | Toplu durum değişikliği (en fazla 200) |
 | `POST` | `/:id/request-info` | MOD/QUA | Süreli bağlantıyla bilgi/belge talebi |
 | `POST` | `/:id/notes` | MOD/QUA | Dahili not |
@@ -91,14 +91,14 @@ GET /api/admin/applications?category=hidrolik,disli&cert=iatf&country=tr&status=
 | `GET` | `/` | tümü | Denetim kuyruğu (`status`, `mine`, `q`) |
 | `GET` | `/:id` | tümü | Detay + kontrol listesi + anlık puan |
 | `GET` | `/templates/active` | tümü | Aktif kontrol listesi şablonu |
-| `POST` | `/` | QUA/MOD | Periyodik/özel denetim açma |
+| `POST` | `/` | QUA | Periyodik/özel denetim açma |
 | `PATCH` | `/:id` | QUA | Planlama, denetçi ataması, yöntem |
 | `PUT` | `/:id/scores` | QUA | Madde puanları (kısmi kayıt destekli) |
 | `POST` | `/:id/complete` | QUA | Tamamlama; puan ve A/B/C/D kesinleşir |
 
-`complete` gövdesi: `recommendation` (zorunlu), `strengths`, `findings`, `method`,
-`grade_override` + `override_reason` (birlikte zorunlu).
-Tüm maddeler puanlanmadan tamamlanamaz.
+`complete` gövdesi: `recommendation` (zorunlu), `strengths`, `findings`, `method`.
+Tüm maddeler puanlanmadan tamamlanamaz. **Not elle verilmez** — A/B/C/D
+ağırlıklı puandan hesaplanır; gövdede gönderilen not alanları yok sayılır.
 
 ---
 
@@ -109,15 +109,15 @@ Tüm maddeler puanlanmadan tamamlanamaz.
 | `GET` | `/admin/suppliers` | tümü | Onaylı havuz (`q`, `grade`, `status`, `category`, `country`) |
 | `GET` | `/admin/suppliers/export` | tümü | Excel |
 | `GET` | `/admin/suppliers/:id` | tümü | Detay + sözleşme, NCR, denetim, belge |
-| `PATCH` | `/admin/suppliers/:id` | MOD/QUA | Durum, not, OTD/PPM, kategoriler |
+| `PATCH` | `/admin/suppliers/:id` | MOD/QUA | Alan bazlı: ticari alanlar MOD, kalite alanları QUA (`SUPPLIER_FIELD_OWNER`) |
 | `GET` | `/admin/contracts` | tümü | Liste (`expiring=true` süresi yaklaşanlar) |
 | `POST` | `/admin/contracts` | MOD | Yeni sözleşme |
 | `PATCH` | `/admin/contracts/:id` | MOD | Güncelleme |
 | `POST` | `/admin/contracts/scan-expiring` | MOD | Süre taraması + yenileme görevleri |
 | `GET` | `/admin/ncrs` | tümü | Liste (`status`, `severity`, `overdue`) |
-| `POST` | `/admin/ncrs` | QUA/MOD | NCR açma (tedarikçiye bağlantı gönderir) |
-| `PATCH` | `/admin/ncrs/:id` | QUA/MOD | 8D alanları ve durum |
-| `POST` | `/admin/ncrs/:id/resend-link` | QUA/MOD | Cevap bağlantısını yeniden gönder |
+| `POST` | `/admin/ncrs` | QUA | NCR açma (tedarikçiye bağlantı gönderir) |
+| `PATCH` | `/admin/ncrs/:id` | QUA | 8D alanları ve durum |
+| `POST` | `/admin/ncrs/:id/resend-link` | QUA | Cevap bağlantısını yeniden gönder |
 
 ---
 
@@ -130,8 +130,8 @@ Tüm maddeler puanlanmadan tamamlanamaz.
 | `PATCH` | `/admin/documents/:id` | MOD/QUA | Görünürlük (dahili ↔ paylaşılan) |
 | `DELETE` | `/admin/documents/:id` | ADMIN | Silme |
 | `GET` | `/admin/tasks` | tümü | İş sırası (`myQueue`, `mine`, `overdue`, `status`) |
-| `PATCH` | `/admin/tasks/:id` | yazma | Durum, sorumlu, termin |
-| `POST` | `/admin/tasks/:id/claim` | yazma | Görevi üstlen |
+| `PATCH` | `/admin/tasks/:id` | yazma | Durum, öncelik, termin |
+| `POST` | `/admin/tasks/:id/claim` | yazma | Görevi üstlen — başkası üstlenmişse `409` |
 | `GET` | `/admin/stats/dashboard` | tümü | Pano göstergeleri |
 | `GET` | `/admin/stats/outbox` | tümü | E-posta kutusu (`audience=INTERNAL\|SUPPLIER`, `counts` döner) |
 | `GET` | `/admin/stats/outbox/:id` | tümü | Bildirimin gövdesi (önizleme) |

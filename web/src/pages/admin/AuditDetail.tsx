@@ -69,8 +69,6 @@ export default function AuditDetail() {
     strengths: '',
     findings: '',
     recommendation: 'APPROVE',
-    grade_override: '',
-    override_reason: '',
   });
   const [users, setUsers] = useState<Array<{ id: number; full_name: string }>>([]);
 
@@ -179,8 +177,6 @@ export default function AuditDetail() {
         findings: completion.findings || undefined,
         recommendation: completion.recommendation,
         method: audit!.method ?? plan.method,
-        grade_override: completion.grade_override || undefined,
-        override_reason: completion.override_reason || undefined,
       });
       toast.push(t('au.complete.ok'), 'ok');
       setCompleteModal(false);
@@ -395,7 +391,7 @@ export default function AuditDetail() {
                   {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={savePlan} disabled={busy} type="button">
-                  {busy && <span className="spinner" />} Kaydet
+                  {busy && <span className="spinner" />} {t('a.save')}
                 </button>
               </div>
             </>
@@ -455,8 +451,8 @@ export default function AuditDetail() {
               <span className="big-score" style={{ fontSize: 26 }}>
                 {liveScore.score}
               </span>
-              <Grade grade={completion.grade_override || projectedGrade} />
-              <span className="small muted">{t('au.computed.grade')}: {projectedGrade}</span>
+              <Grade grade={projectedGrade} />
+              <span className="small muted">{t('au.grade.from.score')}</span>
             </div>
 
             <div className="field">
@@ -477,25 +473,6 @@ export default function AuditDetail() {
                 ))}
               </select>
             </div>
-            <div className="field">
-              <label>{t('au.override')}</label>
-              <select value={completion.grade_override} onChange={(e) => setCompletion({ ...completion, grade_override: e.target.value })}>
-                <option value="">Hesaplanan notu kullan ({projectedGrade})</option>
-                {['A', 'B', 'C', 'D'].map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {completion.grade_override && (
-              <div className="field">
-                <label>
-                  {t('au.override.reason')} <span className="req">*</span>
-                </label>
-                <textarea rows={2} value={completion.override_reason} onChange={(e) => setCompletion({ ...completion, override_reason: e.target.value })} />
-              </div>
-            )}
           </div>
         </Modal>
       )}

@@ -235,6 +235,10 @@
 
 /* Yükleme alanları */
 .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* Zorunlu belge eksik gönderildiğinde yuva kırmızıya döner. */
+.upload-slot.invalid { border-color: var(--brand); background: var(--brand-soft); }
+.upload-slot .upload-error { color: var(--brand); font-weight: 600; }
+
 .upload-slot {
   border: 1.5px dashed var(--line-2);
   border-radius: var(--radius);

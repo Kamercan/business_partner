@@ -110,9 +110,10 @@ export default function Ncrs() {
         subtitle={t('nc.subtitle')}
         actions={
           !readOnly &&
-          can('QUALITY', 'MODERATOR') && (
+          // Uygunsuzluk kalite biriminin alanıdır; satınalma yalnızca görür.
+          can('QUALITY') && (
             <button className="btn btn-primary" onClick={() => setModal(true)} type="button">
-              + Yeni uygunsuzluk
+              {t('nc.new')}
             </button>
           )
         }

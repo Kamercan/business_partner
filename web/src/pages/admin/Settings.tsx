@@ -183,7 +183,7 @@ export default function Settings() {
                 {t('se.taxonomy')} ({meta?.categories.length ?? 0})
                 {can('ADMIN') && (
                   <button className="btn btn-sm" onClick={() => setCatModal(true)} type="button">
-                    + Ekle
+                    {t('a.add')}
                   </button>
                 )}
               </div>
@@ -304,7 +304,7 @@ export default function Settings() {
                   {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={changePassword} disabled={busy || pw.new_password.length < 8} type="button">
-                  {busy && <span className="spinner" />} Kaydet
+                  {busy && <span className="spinner" />} {t('a.save')}
                 </button>
               </div>
             </>

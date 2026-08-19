@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { db } from '../db/index.js';
+import { db, tx } from '../db/index.js';
 import { logActivity } from '../lib/activity.js';
-import { ah, forbidden, notFound, parse } from '../lib/http.js';
+import { ah, conflict, forbidden, notFound, parse } from '../lib/http.js';
 import { actorOf, requireAuth } from '../middleware/auth.js';
 
 export const taskRoutes = Router();
@@ -58,7 +58,9 @@ taskRoutes.get(
       clauses.push('t.assigned_to = ?');
       params.push(req.user!.id);
     } else if (q.myQueue && req.user!.role !== 'ADMIN') {
-      clauses.push('(t.assigned_role = ? OR t.assigned_to = ?)');
+      // Birimimin henüz üstlenilmemiş işleri + bana atanmış işler.
+      // Bir görevi biri üstlendiğinde diğerlerinin kuyruğundan düşer.
+      clauses.push('((t.assigned_role = ? AND t.assigned_to IS NULL) OR t.assigned_to = ?)');
       params.push(req.user!.role, req.user!.id);
     }
     if (q.overdue) clauses.push("t.due_date IS NOT NULL AND date(t.due_date) < date('now')");
@@ -68,9 +70,7 @@ taskRoutes.get(
     const rows = db
       .prepare(
         `${SELECT} ${where}
-         ORDER BY is_overdue DESC,
-                  CASE t.priority WHEN 'HIGH' THEN 0 WHEN 'NORMAL' THEN 1 ELSE 2 END,
-                  t.due_date IS NULL, t.due_date, t.id DESC
+         ORDER BY t.id DESC
          LIMIT ? OFFSET ?`,
       )
       .all(...params, q.pageSize, (q.page - 1) * q.pageSize);
@@ -136,15 +136,58 @@ taskRoutes.post(
     if (req.user!.role === 'VIEWER') throw forbidden('Salt okunur rolde görev üstlenilemez.');
     const id = Number(req.params.id);
     const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as
-      | { id: number; assigned_role: string; status: string }
+      | {
+          id: number;
+          assigned_role: string;
+          status: string;
+          assigned_to: number | null;
+          entity_type: 'APPLICATION' | 'SUPPLIER' | 'AUDIT' | 'CONTRACT' | 'NCR';
+          entity_id: number;
+        }
       | undefined;
     if (!task) throw notFound('Görev bulunamadı.');
     if (req.user!.role !== 'ADMIN' && task.assigned_role !== req.user!.role) {
       throw forbidden('Bu görev başka bir birime atanmış.');
     }
-    db.prepare(
-      `UPDATE tasks SET assigned_to = ?, status = CASE WHEN status = 'OPEN' THEN 'IN_PROGRESS' ELSE status END WHERE id = ?`,
-    ).run(req.user!.id, id);
+    // Görev tek kişiye aittir: bir başkası üstlendiyse ikinci kişi alamaz.
+    if (task.assigned_to !== null && task.assigned_to !== req.user!.id) {
+      const owner = db.prepare('SELECT full_name FROM users WHERE id = ?').get(task.assigned_to) as
+        | { full_name: string }
+        | undefined;
+      throw conflict(`Bu görevi ${owner?.full_name ?? 'başka bir kullanıcı'} üstlenmiş.`);
+    }
+
+    tx(() => {
+      db.prepare(
+        `UPDATE tasks SET assigned_to = ?, status = CASE WHEN status = 'OPEN' THEN 'IN_PROGRESS' ELSE status END WHERE id = ?`,
+      ).run(req.user!.id, id);
+
+      /**
+       * Üstlenen kişi aynı zamanda kaydın sorumlusu olur. Sorumluluk yalnızca
+       * buradan belirlenir; ekranlarda elle atama yoktur.
+       */
+      if (task.entity_type === 'APPLICATION') {
+        db.prepare("UPDATE applications SET assigned_to = ?, updated_at = datetime('now') WHERE id = ?").run(
+          req.user!.id,
+          task.entity_id,
+        );
+      } else if (task.entity_type === 'AUDIT') {
+        db.prepare("UPDATE audits SET auditor_id = ?, updated_at = datetime('now') WHERE id = ?").run(
+          req.user!.id,
+          task.entity_id,
+        );
+      }
+    });
+
+    logActivity({
+      entityType: task.entity_type,
+      entityId: task.entity_id,
+      action: 'ASSIGNED',
+      actor: actorOf(req),
+      to: req.user!.full_name,
+      detail: 'Görev üstlenildi.',
+    });
+
     res.json(db.prepare(`${SELECT} WHERE t.id = ?`).get(id));
   }),
 );

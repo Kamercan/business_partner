@@ -15,6 +15,8 @@ import {
   notifyStatusChange,
 } from '../lib/notifications.js';
 import { computeCompleteness } from '../lib/scoring.js';
+import { REQUIRED_DOCUMENT_KINDS, STATUS_ROLES } from '../lib/constants.js';
+import { checkTaxNumber } from '../lib/tax.js';
 import { normalizeCompany, normalizeTaxId } from '../lib/text.js';
 import { closeTasksFor, createTask } from '../lib/tasks.js';
 import { actorOf, requireAuth, requireRole } from '../middleware/auth.js';
@@ -31,7 +33,7 @@ export const adminApplications = Router();
 
 const submitSchema = z.object({
   company_name: z.string().trim().min(2, 'Firma adı en az 2 karakter olmalıdır.').max(200),
-  tax_id: z.string().trim().min(4, 'Vergi / DUNS numarası geçersiz.').max(40),
+  tax_id: z.string().trim().min(1, 'Vergi / DUNS numarası zorunludur.').max(40),
   founded_year: z.coerce.number().int().min(1800).max(new Date().getFullYear()).optional().nullable(),
   employee_band: z.string().trim().max(40).optional().nullable(),
   revenue_band: z.string().trim().max(40).optional().nullable(),
@@ -61,7 +63,25 @@ const submitSchema = z.object({
   kvkk_consent: z.literal(true, { errorMap: () => ({ message: 'KVKK aydınlatma onayı zorunludur.' }) }),
   /** Bot tuzağı: gerçek kullanıcılar bu alanı doldurmaz. */
   website_url: z.string().max(0).optional(),
-});
+})
+  /**
+   * Vergi numarası ülkeye bağlı olduğu için alan bazında değil, nesne
+   * düzeyinde doğrulanır: Türkiye'de VKN/TCKN sağlaması hesaplanır.
+   */
+  .superRefine((data, ctx) => {
+    const check = checkTaxNumber(data.tax_id, data.country);
+    if (check.ok) return;
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['tax_id'],
+      message:
+        data.country.toLowerCase() === 'tr'
+          ? check.reason === 'format'
+            ? 'Vergi numarası 10 haneli (VKN) veya 11 haneli (TCKN) olmalıdır.'
+            : 'Vergi numarası doğrulanamadı. Lütfen kontrol ediniz.'
+          : 'Vergi / DUNS numarası geçersiz.',
+    });
+  });
 
 /** multipart/form-data alanlarını JSON'a çevirir (diziler JSON string olarak gelir). */
 function parseMultipartBody(body: Record<string, unknown>): Record<string, unknown> {
@@ -119,6 +139,18 @@ publicApplications.post(
 
     const files = (req.files ?? {}) as Record<string, Express.Multer.File[]>;
     const fileList = DOC_FIELDS.flatMap((f) => (files[f.name] ?? []).map((file) => ({ file, kind: f.kind })));
+
+    /**
+     * Zorunlu belgeler sunucuda da denetlenir: formdaki "Zorunlu" rozeti
+     * yalnızca bilgilendirmedir, doğrudan API'ye gönderim yapılabilir.
+     */
+    const uploadedKinds = new Set(fileList.map((f) => f.kind));
+    const missingDocs = DOC_FIELDS.filter(
+      (f) => (REQUIRED_DOCUMENT_KINDS as readonly string[]).includes(f.kind) && !uploadedKinds.has(f.kind),
+    );
+    if (missingDocs.length > 0) {
+      throw badRequest('Zorunlu belgeleri yükleyiniz.', missingDocs.map((f) => ({ field: f.name, message: 'Bu belge zorunludur.' })));
+    }
 
     const companyKey = normalizeCompany(body.company_name);
     const taxKey = normalizeTaxId(body.tax_id);
@@ -415,13 +447,57 @@ adminApplications.get(
       supplier: supplier ?? null,
       duplicates,
       activity: getActivity('APPLICATION', id),
-      allowedTransitions: STATUS_TRANSITIONS[app.status as ApplicationStatus] ?? [],
+      /**
+       * Yalnızca kullanıcının rolünün yapabileceği geçişler döner; arayüz
+       * bu listeden buton üretir, sunucu da aynı kuralı uygular.
+       */
+      allowedTransitions: (STATUS_TRANSITIONS[app.status as ApplicationStatus] ?? []).filter((next) =>
+        canChangeStatus(req.user!.role, next),
+      ),
+      /** Bu aşamanın sorumlusu — üstlenen kişidir, elle değiştirilemez. */
+      stageOwner: stageOwnerOf(id, app.status as ApplicationStatus),
     });
   }),
 );
 
+/** Rol, hedef duruma geçiş yapabilir mi? ADMIN her aşamayı yönetebilir. */
+function canChangeStatus(role: string, next: string): boolean {
+  if (role === 'ADMIN') return true;
+  const allowed = STATUS_ROLES[next as ApplicationStatus] ?? [];
+  return (allowed as readonly string[]).includes(role);
+}
+
+/**
+ * Başvurunun bulunduğu aşamanın sorumlusu.
+ * Denetim aşamalarında denetimi üstlenen kalite uzmanı, diğer aşamalarda
+ * başvuruyu üstlenen satınalmacı görünür. Sorumluluk üstlenmeyle belirlenir;
+ * elle atama yoktur.
+ */
+function stageOwnerOf(
+  applicationId: number,
+  status: ApplicationStatus,
+): { name: string | null; role: 'MODERATOR' | 'QUALITY' } {
+  const auditStage = ['AUDIT_PENDING', 'AUDIT_PLANNED', 'AUDIT_IN_PROGRESS', 'AUDIT_DONE'].includes(status);
+  if (auditStage) {
+    const row = db
+      .prepare(
+        `SELECT u.full_name AS name FROM audits a LEFT JOIN users u ON u.id = a.auditor_id
+          WHERE a.application_id = ? ORDER BY a.id DESC LIMIT 1`,
+      )
+      .get(applicationId) as { name: string | null } | undefined;
+    return { name: row?.name ?? null, role: 'QUALITY' };
+  }
+  const row = db
+    .prepare('SELECT u.full_name AS name FROM applications a LEFT JOIN users u ON u.id = a.assigned_to WHERE a.id = ?')
+    .get(applicationId) as { name: string | null } | undefined;
+  return { name: row?.name ?? null, role: 'MODERATOR' };
+}
+
+/**
+ * Sorumlu ataması bu uçtan yapılmaz — görev üstlenildiğinde otomatik atanır.
+ * Böylece "kim üstlendiyse sorumlu odur" kuralı tek yerden korunur.
+ */
 const patchSchema = z.object({
-  assigned_to: z.number().int().positive().nullable().optional(),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH']).optional(),
   decision_note: z.string().max(2000).nullable().optional(),
 });
@@ -451,21 +527,6 @@ adminApplications.patch(
       id,
     );
 
-    if (body.assigned_to !== undefined) {
-      const assignee = body.assigned_to
-        ? (db.prepare('SELECT full_name FROM users WHERE id = ?').get(body.assigned_to) as { full_name: string } | undefined)
-        : undefined;
-      logActivity({
-        entityType: 'APPLICATION',
-        entityId: id,
-        action: 'ASSIGNED',
-        actor: actorOf(req),
-        to: assignee?.full_name ?? 'atanmadı',
-      });
-      db.prepare(
-        `UPDATE tasks SET assigned_to = ? WHERE entity_type = 'APPLICATION' AND entity_id = ? AND status IN ('OPEN','IN_PROGRESS')`,
-      ).run(body.assigned_to ?? null, id);
-    }
     if (body.priority) {
       logActivity({
         entityType: 'APPLICATION',
@@ -517,6 +578,11 @@ adminApplications.post(
       throw badRequest(
         `"${app.status}" durumundan "${body.status}" durumuna geçilemez. İzin verilen geçişler: ${allowed.join(', ') || 'yok'}.`,
       );
+    }
+
+    // Birim ayrımı: satınalma kararlarını kalite, denetim aşamalarını satınalma alamaz.
+    if (!canChangeStatus(req.user!.role, body.status)) {
+      throw forbidden('Bu karar başka bir birimin yetkisindedir.');
     }
 
     // Yalnızca kalite birimi denetim sonucuna dayalı kararları verebilir.

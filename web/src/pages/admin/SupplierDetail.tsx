@@ -58,6 +58,13 @@ export default function SupplierDetail() {
   const { t, lang } = useI18n();
   const { can, readOnly } = useAuth();
 
+  /**
+   * Tedarikçi kartında alan sahipliği: ticari ilişki satınalmanın, kalite
+   * performansı kalitenin. Karşı birim değerleri görür ama düzenleyemez.
+   */
+  const ownsCommercial = can('MODERATOR');
+  const ownsQuality = can('QUALITY');
+
   const [data, setData] = useState<Supplier | null>(null);
   const [busy, setBusy] = useState(false);
   const [editModal, setEditModal] = useState(false);
@@ -99,12 +106,18 @@ export default function SupplierDetail() {
   async function save() {
     setBusy(true);
     try {
+      // Sunucu her alanı sahibi olan birime kilitler; ekran da yalnızca
+      // kendi birimimizin alanlarını gönderir.
       await api.patch(`/admin/suppliers/${id}`, {
-        status: edit.status,
-        grade: edit.grade || null,
-        otd_percent: edit.otd_percent === '' ? null : Number(edit.otd_percent),
-        ppm: edit.ppm === '' ? null : Number(edit.ppm),
-        next_audit_due: edit.next_audit_due || null,
+        ...(ownsCommercial ? { status: edit.status } : {}),
+        ...(ownsQuality
+          ? {
+              grade: edit.grade || null,
+              otd_percent: edit.otd_percent === '' ? null : Number(edit.otd_percent),
+              ppm: edit.ppm === '' ? null : Number(edit.ppm),
+              next_audit_due: edit.next_audit_due || null,
+            }
+          : {}),
       });
       toast.push(t('su.updated'), 'ok');
       setEditModal(false);
@@ -413,48 +426,59 @@ export default function SupplierDetail() {
                   {t('a.cancel')}
                 </button>
                 <button className="btn btn-primary" onClick={save} disabled={busy} type="button">
-                  {busy && <span className="spinner" />} Kaydet
+                  {busy && <span className="spinner" />} {t('a.save')}
                 </button>
               </div>
             </>
           }
         >
           <div className="stack">
-            <div className="field">
-              <label>{t('a.status')}</label>
-              <select value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })}>
-                {Object.keys(SUPPLIER_STATUS).map((s) => (
-                  <option key={s} value={s}>
-                    {label(SUPPLIER_STATUS, s, lang)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>{t('a.grade')}</label>
-              <select value={edit.grade} onChange={(e) => setEdit({ ...edit, grade: e.target.value })}>
-                <option value="">{t('ad.not.received')}</option>
-                {['A', 'B', 'C', 'D'].map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid-2">
+            {/* Ticari ilişki satınalmanın alanı. */}
+            {ownsCommercial && (
               <div className="field">
-                <label>{t('su.otd')}</label>
-                <input type="number" min="0" max="100" value={edit.otd_percent} onChange={(e) => setEdit({ ...edit, otd_percent: e.target.value })} />
+                <label>{t('a.status')}</label>
+                <select value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })}>
+                  {Object.keys(SUPPLIER_STATUS).map((s) => (
+                    <option key={s} value={s}>
+                      {label(SUPPLIER_STATUS, s, lang)}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="field">
-                <label>{t('su.ppm')}</label>
-                <input type="number" min="0" value={edit.ppm} onChange={(e) => setEdit({ ...edit, ppm: e.target.value })} />
-              </div>
-            </div>
-            <div className="field">
-              <label>{t('su.next.audit.date')}</label>
-              <input type="date" value={edit.next_audit_due} onChange={(e) => setEdit({ ...edit, next_audit_due: e.target.value })} />
-            </div>
+            )}
+            {/* Kalite performansı kalite biriminin alanı. */}
+            {ownsQuality && (
+              <>
+                <div className="field">
+                  <label>{t('a.grade')}</label>
+                  <select value={edit.grade} onChange={(e) => setEdit({ ...edit, grade: e.target.value })}>
+                    <option value="">{t('ad.not.received')}</option>
+                    {['A', 'B', 'C', 'D'].map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid-2">
+                  <div className="field">
+                    <label>{t('su.otd')}</label>
+                    <input type="number" min="0" max="100" value={edit.otd_percent} onChange={(e) => setEdit({ ...edit, otd_percent: e.target.value })} />
+                  </div>
+                  <div className="field">
+                    <label>{t('su.ppm')}</label>
+                    <input type="number" min="0" value={edit.ppm} onChange={(e) => setEdit({ ...edit, ppm: e.target.value })} />
+                  </div>
+                </div>
+                <div className="field">
+                  <label>{t('su.next.audit.date')}</label>
+                  <input type="date" value={edit.next_audit_due} onChange={(e) => setEdit({ ...edit, next_audit_due: e.target.value })} />
+                </div>
+              </>
+            )}
+            <p className="small muted" style={{ margin: 0 }}>
+              {t('su.field.owner.hint')}
+            </p>
           </div>
         </Modal>
       )}

@@ -248,6 +248,31 @@ const publicDict = {
     en: 'Select at least one product group.',
     ja: '供給品目を1つ以上選択してください。',
   },
+  'error.email': {
+    tr: 'Geçerli bir e-posta adresi giriniz.',
+    en: 'Please enter a valid email address.',
+    ja: '有効なメールアドレスを入力してください。',
+  },
+  'error.document': {
+    tr: 'Bu belge zorunludur.',
+    en: 'This document is required.',
+    ja: 'この書類は必須です。',
+  },
+  'error.tax.tr.format': {
+    tr: 'Vergi numarası 10 haneli (VKN) veya 11 haneli (TCKN) olmalıdır.',
+    en: 'The tax number must be 10 digits (VKN) or 11 digits (national ID).',
+    ja: '納税者番号は10桁（VKN）または11桁（国民番号）である必要があります。',
+  },
+  'error.tax.tr.checksum': {
+    tr: 'Vergi numarası doğrulanamadı. Lütfen kontrol ediniz.',
+    en: 'The tax number failed verification. Please check it.',
+    ja: '納税者番号を確認できませんでした。ご確認ください。',
+  },
+  'error.tax.format': {
+    tr: 'Vergi / DUNS numarası geçersiz.',
+    en: 'The tax / DUNS number is not valid.',
+    ja: '納税者番号 / DUNS番号が正しくありません。',
+  },
   'error.generic': {
     tr: 'Başvuru gönderilemedi. Lütfen tekrar deneyiniz.',
     en: 'The application could not be submitted. Please try again.',

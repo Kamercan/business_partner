@@ -55,18 +55,24 @@ mümkün olduğunu söyler.
 
 ## Roller ve yetkiler
 
+Satınalma (MODERATOR) ve kalite (QUALITY) **ayrı birimlerdir**: her karar tek bir
+birimin yetkisindedir, diğeri o kararı ekrandan da API'den de veremez.
+
 | İşlem | ADMIN | MODERATOR | QUALITY | VIEWER |
 |---|:--:|:--:|:--:|:--:|
 | Başvuru listeleme / detay / Excel | ✓ | ✓ | ✓ | ✓ |
-| Başvuru durumu değiştirme | ✓ | ✓ | ✓ | — |
-| Onay / eleme kararı | ✓ | ✓¹ | ✓ | — |
+| İncelemeye alma, bilgi bekletme, beklemeye alma | ✓ | ✓ | — | — |
+| **Onayla → Kaliteye gönder** | ✓ | ✓ | — | — |
+| **Onaylı tedarikçi yap** / reddetme / eleme | ✓ | ✓¹ | — | — |
+| Denetim aşamaları (planlandı → başladı → tamamlandı) | ✓ | — | ✓ | — |
 | Toplu işlem | ✓ | ✓ | — | — |
 | Bilgi/belge talebi | ✓ | ✓ | ✓ | — |
-| Denetim planlama ve puanlama | ✓ | — | ✓ | — |
-| Denetimi tamamlama, not verme | ✓ | — | ✓ | — |
-| Tedarikçi güncelleme | ✓ | ✓ | ✓ | — |
+| Denetim açma, planlama ve puanlama | ✓ | — | ✓ | — |
+| Denetimi tamamlama | ✓ | — | ✓ | — |
+| Tedarikçi: ticari durum, iletişim, kategoriler | ✓ | ✓ | — | — |
+| Tedarikçi: kalite notu, OTD, PPM, sonraki denetim | ✓ | — | ✓ | — |
 | Sözleşme oluşturma | ✓ | ✓ | — | — |
-| NCR açma / kapatma | ✓ | ✓ | ✓ | — |
+| NCR açma / güncelleme / kapatma / not | ✓ | — | ✓ | — |
 | Belge yükleme / paylaşma | ✓ | ✓ | ✓ | — |
 | Belge silme | ✓ | — | — | — |
 | Kullanıcı ve taksonomi yönetimi | ✓ | — | — | — |
@@ -74,6 +80,28 @@ mümkün olduğunu söyler.
 
 ¹ Moderatör onay/eleme kararını ancak **tamamlanmış bir kalite denetimi varsa** verebilir.
 Denetimsiz onay sistem tarafından engellenir.
+
+Kaynak tablolar: durum kararları `STATUS_ROLES` (`server/src/lib/constants.ts`),
+tedarikçi alanları `SUPPLIER_FIELD_OWNER` (`server/src/modules/suppliers.routes.ts`).
+Yetkisiz bir birim denediğinde sunucu `403` ve
+*"Bu karar başka bir birimin yetkisindedir."* döner.
+
+### İş üstlenme
+
+Bir birime birden çok hesap bağlıdır. Yeni iş **birimin ortak kuyruğuna** düşer;
+`GET /admin/tasks?myQueue=true` hem üstlenilmemiş birim işlerini hem kişiye
+atanmış işleri, **en yeni kayıt en üstte** olacak şekilde döner.
+
+*Üstlen* (`POST /admin/tasks/:id/claim`) tek işlemde:
+
+1. görevi üstlenene atar ve diğerlerinin kuyruğundan düşürür,
+2. kaydın sorumlusunu yazar (`applications.assigned_to` veya `audits.auditor_id`),
+3. `ASSIGNED` olarak denetim izine geçer.
+
+Görevi başkası üstlenmişse ikinci istek `409` döner. Sorumlu alanı **elle
+değiştirilemez**; başvuru detayında aşamanın sahibi birimin üstlenen kişisi
+salt okunur gösterilir — satınalma aşamasında satınalmadaki, denetim aşamasında
+kalitedeki kişi.
 
 ---
 
@@ -104,6 +132,12 @@ Varsayılan not eşikleri (Ayarlar ekranından değiştirilebilir):
 | **B** | ≥ 70 | Onaylı tedarikçi |
 | **C** | ≥ 55 | Şartlı onay (`CONDITIONAL`) |
 | **D** | < 55 | Elenir, iyileştirme sonrası yeniden başvurabilir |
+
+**Not elle değiştirilemez.** Denetimi tamamlama ekranında hesaplanan puan ve
+karşılığı olan not gösterilir; not alanı düzenlenebilir değildir ve API'ye
+gönderilen not alanları yok sayılır. Değerlendirmenin öznelliği kontrol listesi
+puanlamasında kalır — bir maddeye verilen puan tartışılabilir, sonucun puandan
+sapması tartışılamaz. Tüm maddeler puanlanmadan denetim tamamlanamaz.
 
 ---
 

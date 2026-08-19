@@ -12,6 +12,7 @@ import {
   STATUS_ACTION,
   DOCUMENT_KIND,
   PRIORITY,
+  ROLE,
   formatBytes,
   formatDate,
   label,
@@ -65,6 +66,8 @@ type Detail = {
   duplicates: Array<{ id: number; ref_no: string; company_name: string; status: string; created_at: string }>;
   activity: Array<{ id: number; action: string; actor_label: string; from_value: string | null; to_value: string | null; detail: string | null; created_at: string }>;
   allowedTransitions: string[];
+  /** Aşamanın sorumlusu — üstlenen kişi. Elle değiştirilemez. */
+  stageOwner: { name: string | null; role: 'MODERATOR' | 'QUALITY' } | null;
 };
 
 export default function ApplicationDetail() {
@@ -76,7 +79,6 @@ export default function ApplicationDetail() {
   const { can, user, readOnly } = useAuth();
 
   const [data, setData] = useState<Detail | null>(null);
-  const [users, setUsers] = useState<Array<{ id: number; full_name: string; role: string }>>([]);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [statusModal, setStatusModal] = useState<string | null>(null);
@@ -98,7 +100,6 @@ export default function ApplicationDetail() {
 
   useEffect(() => {
     load();
-    api.get<Array<{ id: number; full_name: string; role: string }>>('/admin/users').then(setUsers).catch(() => undefined);
   }, [load]);
 
   if (!data) {
@@ -141,7 +142,7 @@ export default function ApplicationDetail() {
       setNote('');
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Not eklenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('ad.note.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -159,15 +160,6 @@ export default function ApplicationDetail() {
       toast.push(err instanceof ApiError ? err.message : t('a.send.failed'), 'error');
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function assign(userId: string) {
-    try {
-      await api.patch(`/admin/applications/${id}`, { assigned_to: userId ? Number(userId) : null });
-      load();
-    } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : t('ad.assign.failed'), 'error');
     }
   }
 
@@ -221,24 +213,17 @@ export default function ApplicationDetail() {
                 </Link>
               )}
             </div>
-            {!readOnly && (
-              <div className="row">
-                <span className="small muted">{t('a.owner')}:</span>
-                <select
-                  className="input"
-                  style={{ width: 200 }}
-                  value={data.assigned_to ?? ''}
-                  onChange={(e) => assign(e.target.value)}
-                >
-                  <option value="">{t('a.unassigned')}</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/*
+              Sorumlu elle seçilmez: başvuruyu iş sırasından kim üstlendiyse
+              odur. Denetim aşamasında denetimi üstlenen kalite uzmanı görünür.
+            */}
+            <div className="row">
+              <span className="small muted">{t('a.owner')}:</span>
+              <span className="stage-owner">
+                {data.stageOwner?.name ?? t('ad.owner.unclaimed')}
+                <span className="small muted"> · {label(ROLE, data.stageOwner?.role, lang)}</span>
+              </span>
+            </div>
           </div>
 
           {data.duplicate_of && data.duplicates.length > 0 && (
@@ -406,7 +391,7 @@ export default function ApplicationDetail() {
                     placeholder={t('ad.note.ph')}
                   />
                   <button className="btn btn-sm" onClick={addNote} disabled={!note.trim() || busy} type="button" style={{ alignSelf: 'flex-start' }}>
-                    Not ekle
+                    {t('ad.note.add')}
                   </button>
                 </div>
               )}

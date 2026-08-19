@@ -93,7 +93,7 @@ export default function NcrDetail() {
       setNote('');
       load();
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Eklenemedi.', 'error');
+      toast.push(err instanceof ApiError ? err.message : t('a.add.failed'), 'error');
     } finally {
       setBusy(false);
     }
@@ -120,7 +120,8 @@ export default function NcrDetail() {
     }
   }
 
-  const canEdit = !readOnly && can('QUALITY', 'MODERATOR') && !['CLOSED'].includes(data.status);
+  // Uygunsuzluğu yalnızca kalite birimi işler; satınalma kaydı görür, değiştiremez.
+  const canEdit = !readOnly && can('QUALITY') && !['CLOSED'].includes(data.status);
   const hasResponse = !!(data.root_cause && data.corrective_action);
 
   return (
@@ -131,7 +132,7 @@ export default function NcrDetail() {
         actions={
           <>
             <Link className="btn btn-sm" to="/yonetim/uygunsuzluklar">
-              ← Uygunsuzluklar
+              {t('nc.back')}
             </Link>
             <Link className="btn btn-sm" to={`/yonetim/tedarikciler/${data.supplier_id}`}>
               {t('nc.open.supplier')}
@@ -162,7 +163,7 @@ export default function NcrDetail() {
               <>
                 <button
                   className="btn btn-sm btn-danger"
-                  onClick={() => patch({ status: 'REJECTED' }, 'Cevap reddedildi.')}
+                  onClick={() => patch({ status: 'REJECTED' }, t('nc.rejected'))}
                   disabled={busy}
                   type="button"
                 >
@@ -174,7 +175,7 @@ export default function NcrDetail() {
                   disabled={busy}
                   type="button"
                 >
-                  Kapat
+                  {t('nc.close')}
                 </button>
               </>
             )}
@@ -259,7 +260,7 @@ export default function NcrDetail() {
                     disabled={busy}
                     type="button"
                   >
-                    Kaydet
+                    {t('a.save')}
                   </button>
                 </div>
               )}
@@ -313,11 +314,12 @@ export default function NcrDetail() {
 
             <div className="card">
               <div className="card-title">{t('a.notes')}</div>
-              {!readOnly && (
+              {/* Uygunsuzluk notu kalite biriminin kaydıdır. */}
+              {!readOnly && can('QUALITY') && (
                 <div className="stack" style={{ marginBottom: 14 }}>
-                  <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Dahili not..." />
+                  <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('ad.note.ph')} />
                   <button className="btn btn-sm" onClick={addNote} disabled={!note.trim() || busy} type="button" style={{ alignSelf: 'flex-start' }}>
-                    Not ekle
+                    {t('ad.note.add')}
                   </button>
                 </div>
               )}

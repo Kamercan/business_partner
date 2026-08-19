@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ApiError, api } from '../../api/client';
 import { FileSlot, Modal } from '../../components/ui';
 import { useI18n } from '../../i18n';
+import { checkTaxNumber } from '../../lib/tax';
 import { LangToggle } from './PublicShell';
 
 export type Meta = {
@@ -16,6 +17,8 @@ export type Meta = {
   countries: Array<{ code: string; tr: string; en: string; ja: string }>;
   employeeBands: string[];
   revenueBands: string[];
+  /** Yüklenmesi zorunlu belge türleri (sunucu belirler). */
+  requiredDocuments?: string[];
 };
 
 type FormState = {
@@ -51,12 +54,16 @@ const REQUIRED: Array<keyof FormState> = [
   'company_name', 'tax_id', 'sector', 'contact_name', 'email', 'phone', 'country', 'city',
 ];
 
+/**
+ * Belge yuvaları. Hangilerinin zorunlu olduğunu sunucu `/meta` ile bildirir
+ * (`requiredDocuments`); böylece rozet ile gerçek denetim daima aynı kalır.
+ */
 const DOC_SLOTS = [
-  { field: 'presentation', titleKey: 'up.presentation', metaKey: 'up.presentation.meta', required: true, accept: '.pdf,.ppt,.pptx' },
-  { field: 'catalog', titleKey: 'up.catalog', metaKey: 'up.catalog.meta', required: true, accept: '.pdf' },
-  { field: 'iso9001', titleKey: 'up.iso', metaKey: 'up.iso.meta', required: true, accept: '.pdf' },
-  { field: 'cert_other', titleKey: 'up.cert.other', metaKey: 'up.cert.other.meta', required: false, accept: '.pdf', multiple: true },
-  { field: 'financial', titleKey: 'up.financial', metaKey: 'up.financial.meta', required: false, accept: '.pdf', wide: true },
+  { field: 'presentation', kind: 'PRESENTATION', titleKey: 'up.presentation', metaKey: 'up.presentation.meta', accept: '.pdf,.ppt,.pptx' },
+  { field: 'catalog', kind: 'CATALOG', titleKey: 'up.catalog', metaKey: 'up.catalog.meta', accept: '.pdf' },
+  { field: 'iso9001', kind: 'ISO9001', titleKey: 'up.iso', metaKey: 'up.iso.meta', accept: '.pdf' },
+  { field: 'cert_other', kind: 'CERT_OTHER', titleKey: 'up.cert.other', metaKey: 'up.cert.other.meta', accept: '.pdf', multiple: true },
+  { field: 'financial', kind: 'FINANCIAL', titleKey: 'up.financial', metaKey: 'up.financial.meta', accept: '.pdf', wide: true },
 ] as const;
 
 export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose: () => void }) {
@@ -106,6 +113,12 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
     return { done, total };
   }, [form, categories, otherSector, otherCountry]);
 
+  /** Sunucunun zorunlu saydığı belge yuvaları. */
+  const requiredDocs = useMemo(
+    () => DOC_SLOTS.filter((slot) => (meta.requiredDocuments ?? []).includes(slot.kind)),
+    [meta.requiredDocuments],
+  );
+
   const toggle = (list: string[], setList: (v: string[]) => void, code: string) =>
     setList(list.includes(code) ? list.filter((c) => c !== code) : [...list, code]);
 
@@ -114,11 +127,29 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
     REQUIRED.forEach((key) => {
       if (!form[key].trim()) next[key] = t('error.required');
     });
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = t('f.email');
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = t('error.email');
     if (otherSector && !form.sector_other.trim()) next.sector_other = t('error.required');
     if (otherCountry && !form.country_other.trim()) next.country_other = t('error.required');
     if (otherCategory && !form.category_other.trim()) next.category_other = t('error.required');
     if (categories.length === 0) next.categories = t('error.categories');
+
+    // Vergi numarası: ülkeye göre anlık kontrol (sunucu da aynı kuralı uygular).
+    if (form.tax_id.trim() && !next.tax_id) {
+      const check = checkTaxNumber(form.tax_id, form.country);
+      if (!check.ok) {
+        next.tax_id =
+          form.country.toLowerCase() === 'tr'
+            ? check.reason === 'format'
+              ? t('error.tax.tr.format')
+              : t('error.tax.tr.checksum')
+            : t('error.tax.format');
+      }
+    }
+
+    // "Zorunlu" rozeti taşıyan belgeler gerçekten zorunludur.
+    requiredDocs.forEach((slot) => {
+      if (!files[slot.field]?.length) next[slot.field] = t('error.document');
+    });
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -127,13 +158,15 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
   async function submit() {
     setFormError(null);
 
-    if (!consent) {
-      setConsentError(true);
-      consentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    if (!validate()) {
+    // Eksikler tek seferde gösterilir: kullanıcı önce onay kutusunu, sonra
+    // alanları ayrı ayrı keşfetmek zorunda kalmasın.
+    const fieldsOk = validate();
+    setConsentError(!consent);
+    if (!fieldsOk || !consent) {
       setFormError(t('error.required'));
+      // İlk hatalı öğeye kaydır.
+      const target = document.querySelector('input.error, select.error, .upload-slot.invalid');
+      (target ?? consentRef.current)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -531,12 +564,13 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
               <FileSlot
                 title={t(slot.titleKey)}
                 meta={t(slot.metaKey)}
-                required={slot.required}
+                required={requiredDocs.some((d) => d.field === slot.field)}
                 accept={slot.accept}
                 multiple={'multiple' in slot ? slot.multiple : false}
                 file={files[slot.field] ?? null}
                 onSelect={(list) => setFiles((prev) => ({ ...prev, [slot.field]: list }))}
                 labels={{ required: t('up.required'), optional: t('up.optional'), remove: t('up.remove') }}
+                error={errors[slot.field]}
               />
             </div>
           ))}

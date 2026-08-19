@@ -8,6 +8,11 @@ import { notifyNcrOpened } from '../lib/notifications.js';
 import { closeTasksFor, createTask } from '../lib/tasks.js';
 import { actorOf, requireAuth, requireRole } from '../middleware/auth.js';
 
+/**
+ * Uygunsuzluk yönetimi kalite biriminin alanıdır: raporu kalite açar, cevabı
+ * kalite değerlendirir ve kapatır. Satınalma kayıtları görebilir ama
+ * değiştiremez — iki birimin sorumlulukları ayrıdır.
+ */
 export const ncrRoutes = Router();
 ncrRoutes.use(requireAuth);
 
@@ -114,7 +119,7 @@ const createSchema = z.object({
 
 ncrRoutes.post(
   '/',
-  requireRole('QUALITY', 'MODERATOR'),
+  requireRole('QUALITY'),
   ah(async (req, res) => {
     const body = parse(createSchema, req.body);
     const supplier = db.prepare('SELECT id, company_name, email, lang FROM suppliers WHERE id = ?').get(body.supplier_id) as
@@ -193,7 +198,7 @@ const patchSchema = z.object({
 
 ncrRoutes.patch(
   '/:id',
-  requireRole('QUALITY', 'MODERATOR'),
+  requireRole('QUALITY'),
   ah((req, res) => {
     const id = Number(req.params.id);
     const body = parse(patchSchema, req.body);
@@ -244,7 +249,7 @@ ncrRoutes.patch(
 
 ncrRoutes.post(
   '/:id/notes',
-  requireRole('QUALITY', 'MODERATOR'),
+  requireRole('QUALITY'),
   ah((req, res) => {
     const id = Number(req.params.id);
     const body = parse(
@@ -262,7 +267,7 @@ ncrRoutes.post(
 /** Tedarikçiye yeni bir cevap bağlantısı gönderir. */
 ncrRoutes.post(
   '/:id/resend-link',
-  requireRole('QUALITY', 'MODERATOR'),
+  requireRole('QUALITY'),
   ah(async (req, res) => {
     const id = Number(req.params.id);
     const ncr = db.prepare(`${SELECT} WHERE n.id = ?`).get(id) as

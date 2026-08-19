@@ -276,8 +276,13 @@ export function seedUsers(): { adminCreated: boolean; adminPassword: string | nu
   // Rol hesapları yalnızca demo modunda oluşturulur; gerçek kurulumda
   // kullanıcılar yönetici tarafından panelden açılır.
   if (config.demoMode) {
+    // Satınalma birimi birden fazla kişiden oluşur: gelen başvuruyu kim
+    // üstlenirse sorumlusu o olur, görev diğerlerinin kuyruğundan düşer.
     insert.run('satinalma@yanmar.com.tr', hash('Moderator123!'), 'Kamercan Beşikci', 'MODERATOR', 'Teknik Satınalma');
+    insert.run('satinalma2@yanmar.com.tr', hash('Moderator123!'), 'Elif Demir', 'MODERATOR', 'Teknik Satınalma');
+    insert.run('satinalma3@yanmar.com.tr', hash('Moderator123!'), 'Burak Şahin', 'MODERATOR', 'Teknik Satınalma');
     insert.run('kalite@yanmar.com.tr', hash('Kalite123!'), 'Kalite Birimi Uzmanı', 'QUALITY', 'Kalite Güvence');
+    insert.run('kalite2@yanmar.com.tr', hash('Kalite123!'), 'Merve Aksoy', 'QUALITY', 'Kalite Güvence');
     insert.run('izleme@yanmar.com.tr', hash('Viewer123!'), 'Yönetim Raporlama', 'VIEWER', 'Yönetim');
   }
 

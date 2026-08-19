@@ -4,7 +4,7 @@ import { config } from '../config.js';
 import { DEMO_SUPPLIER_HASH_KEY, DEMO_SUPPLIER_PASSWORD } from '../db/bootstrap.js';
 import { db, getSetting, setSetting } from '../db/index.js';
 import { logActivity } from '../lib/activity.js';
-import { APPLICATION_STATUSES, COUNTRIES, EMPLOYEE_BANDS, REVENUE_BANDS } from '../lib/constants.js';
+import { APPLICATION_STATUSES, COUNTRIES, EMPLOYEE_BANDS, REQUIRED_DOCUMENT_KINDS, REVENUE_BANDS } from '../lib/constants.js';
 import { ah, notFound, parse } from '../lib/http.js';
 import { actorOf, requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -55,6 +55,8 @@ metaRoutes.get(
       employeeBands: EMPLOYEE_BANDS,
       revenueBands: REVENUE_BANDS,
       statuses: APPLICATION_STATUSES,
+      /** Form bu listeye göre 'Zorunlu' rozeti gösterir ve gönderimi engeller. */
+      requiredDocuments: REQUIRED_DOCUMENT_KINDS,
       org: { name: getSetting('org.name', 'Yanmar Türkiye Makine Sanayi A.Ş.'), short: getSetting('org.short', 'Yanmar Türkiye') },
       /** Demo modunda giriş ekranı örnek hesapları gösterir. */
       demoMode: config.demoMode,

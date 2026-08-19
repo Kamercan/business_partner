@@ -412,9 +412,12 @@ export default function BusinessPartner() {
                   {t('gate.demo.hint')}
                   <div className="demo-list">
                     {[
-                      { role: 'MODERATOR', email: 'satinalma@yanmar.com.tr', password: 'Moderator123!' },
-                      { role: 'QUALITY', email: 'kalite@yanmar.com.tr', password: 'Kalite123!' },
-                      { role: 'VIEWER', email: 'izleme@yanmar.com.tr', password: 'Viewer123!' },
+                      { role: 'MODERATOR', name: 'Kamercan Beşikci', email: 'satinalma@yanmar.com.tr', password: 'Moderator123!' },
+                      { role: 'MODERATOR', name: 'Elif Demir', email: 'satinalma2@yanmar.com.tr', password: 'Moderator123!' },
+                      { role: 'MODERATOR', name: 'Burak Şahin', email: 'satinalma3@yanmar.com.tr', password: 'Moderator123!' },
+                      { role: 'QUALITY', name: 'Kalite Birimi Uzmanı', email: 'kalite@yanmar.com.tr', password: 'Kalite123!' },
+                      { role: 'QUALITY', name: 'Merve Aksoy', email: 'kalite2@yanmar.com.tr', password: 'Kalite123!' },
+                      { role: 'VIEWER', name: 'Yönetim Raporlama', email: 'izleme@yanmar.com.tr', password: 'Viewer123!' },
                     ].map((d) => (
                       <button
                         key={d.email}
@@ -426,7 +429,9 @@ export default function BusinessPartner() {
                           setLoginError(null);
                         }}
                       >
-                        <span className="demo-role">{label(ROLE, d.role, lang)}</span>
+                        <span className="demo-role">
+                          {d.name} <span className="demo-hint">· {label(ROLE, d.role, lang)}</span>
+                        </span>
                         <span className="demo-cred">
                           {d.email} <span className="demo-sep">/</span> {d.password}
                         </span>

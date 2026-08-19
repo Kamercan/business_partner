@@ -389,6 +389,17 @@ dl.kv dt:last-of-type, dl.kv dd:last-of-type { border-bottom: none; }
 .mail-links .section-label { width: 100%; }
 .mail-links a.btn { text-decoration: none; max-width: 100%; overflow-wrap: anywhere; }
 
+/* Aşama sorumlusu — üstlenmeyle belirlenir, alan salt okunurdur. */
+.stage-owner {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 4px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
 /* ------------------------------- Sekmeler --------------------------------- */
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 16px; flex-wrap: wrap; }
 .tab {

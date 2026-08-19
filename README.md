@@ -43,10 +43,17 @@ otomatik kurulur; `npm run db:seed` yalnızca elle müdahale için gereklidir.
 Bu hesaplar yalnızca **demo modunda** (`SEED_DEMO=true`) oluşturulur ve giriş
 ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 
+Satınalma ve kalite birer **birimdir**, tek kişi değil: aynı role birden çok
+hesap bağlıdır, gelen iş önce birimin ortak kuyruğuna düşer ve kim üstlenirse
+işin sorumlusu o olur.
+
 | Rol | E-posta | Şifre | Ne yapabilir |
 |---|---|---|---|
 | Satınalma / Moderatör | `satinalma@yanmar.com.tr` | `Moderator123!` | Başvuruları değerlendirir, onaylar, Excel'e aktarır, sözleşme açar |
+| Satınalma / Moderatör | `satinalma2@yanmar.com.tr` | `Moderator123!` | Aynı birim — Elif Demir |
+| Satınalma / Moderatör | `satinalma3@yanmar.com.tr` | `Moderator123!` | Aynı birim — Burak Şahin |
 | Kalite Birimi | `kalite@yanmar.com.tr` | `Kalite123!` | Denetim yapar, A/B/C/D notu verir, uygunsuzluk açar |
+| Kalite Birimi | `kalite2@yanmar.com.tr` | `Kalite123!` | Aynı birim — Merve Aksoy |
 | İzleyici | `izleme@yanmar.com.tr` | `Viewer123!` | Salt okunur raporlama |
 | Yönetici | `admin@yanmar.com.tr` | yerelde `Admin123!` | Tümü + kullanıcı ve taksonomi yönetimi |
 
@@ -100,6 +107,40 @@ e-postalar, `server/src/lib/uiText.ts` sunucu mesajları); bir dil eksik kalırs
 | `/portal/:token` | Tedarikçi self-servis alanı (hesapsız, süreli bağlantı) |
 | `/yonetim` | Yönetim paneli (giriş sonrası) |
 
+### Birim sorumlulukları ve iş üstlenme
+
+Satınalma ile kalite biriminin görev alanları **birbirinden ayrıdır**. Ayrım
+ekranda gizlemekle bırakılmaz; sunucu da aynı kuralı uygular, yani bir birim
+diğerinin kararını API üzerinden de veremez.
+
+| Karar / alan | Sahibi |
+|---|---|
+| Başvuruyu incelemeye alma, bilgi isteme, beklemeye alma | Satınalma |
+| **Onayla → Kaliteye gönder** | Satınalma |
+| **Onaylı tedarikçi yap**, reddetme, eleme | Satınalma |
+| Denetim planlama, puanlama, tamamlama | Kalite |
+| Uygunsuzluk (NCR) açma, inceleme, kapatma | Kalite |
+| Sözleşmeler | Satınalma |
+| Tedarikçi kartı: ticari durum, iletişim, ürün grupları | Satınalma |
+| Tedarikçi kartı: kalite notu, PPM, zamanında teslimat, sonraki denetim | Kalite |
+
+Kaynak: `server/src/lib/constants.ts` içindeki `STATUS_ROLES` matrisi ve
+`suppliers.routes.ts` içindeki `SUPPLIER_FIELD_OWNER` tablosu.
+`constants.test.ts` bu iki tablonun durum makinesiyle tutarlı kalmasını
+sınar — yeni bir durum eklenip sorumlusu yazılmazsa testler kırılır.
+
+**İş üstlenme.** Yeni başvuru, ilgili birimin **ortak kuyruğuna** düşer ve o
+birimdeki herkes görür. Biri *Üstlen* dediğinde:
+
+1. görev üstlenen kişiye atanır ve diğerlerinin kuyruğundan düşer,
+2. başvurunun **Sorumlu** alanı üstlenen kişi olur — elle değiştirilemez,
+3. ikinci bir kişi aynı görevi üstlenmeye çalışırsa "Bu görevi … üstlenmiş."
+   uyarısıyla reddedilir.
+
+Sorumlu alanı **aşamaya göre** okunur: başvuru satınalmadayken satınalmadaki
+üstlenen, denetim aşamasına geçtiğinde kalitedeki üstlenen görünür. İş sırası
+en yeni kayıt en üstte olacak şekilde listelenir.
+
 ---
 
 ## Faz bazında kapsam
@@ -110,6 +151,13 @@ e-postalar, `server/src/lib/uiText.ts` sunucu mesajları); bir dil eksik kalırs
 - Firma bilgileri, iletişim, **çoklu ürün grubu seçimi** (açıklama baloncuklarıyla),
   kalite sertifikaları, referanslar ve firma tanıtımı
 - **Gerçek dosya yükleme**: şirket sunumu, ürün kataloğu, ISO 9001, diğer sertifikalar, mali tablo
+  — ilk üçü **zorunludur**, eksikse başvuru gönderilemez (`REQUIRED_DOCUMENT_KINDS`)
+- **Zorunlu alan denetimi tek geçişte**: eksik alanların tamamı aynı anda
+  işaretlenir, form ilk hatada durup kullanıcıyı yarım bırakmaz
+- **Vergi numarası teyidi**: Türkiye için 10 haneli **VKN** ve 11 haneli **TCKN**
+  sağlama algoritmalarıyla doğrulanır (`server/src/lib/tax.ts`, 13 testli);
+  yurt dışı numaralarında biçim kontrolüyle yetinilir. Kontrol hem tarayıcıda
+  hem sunucuda çalışır — sunucu belirleyicidir
 - Tam **Türkçe / İngilizce / 日本語** dil desteği (aşağıya bakınız)
 - **KVKK onayı**, rıza metni sürümü, zaman damgası ve IP kaydı ile birlikte saklanır
 - Başvuru referans numarası üretimi (`YTM-BP-2026-00001`) ve otomatik onay e-postası
@@ -123,7 +171,7 @@ e-postalar, `server/src/lib/uiText.ts` sunucu mesajları); bir dil eksik kalırs
   ürün grubu özeti ve hangi filtrelerle alındığını gösteren rapor bilgisi sayfası ile
 - Başvuru detayı: tüm alanlar, belgeler, notlar, denetim izi
 - **Toplu işlem** (birden çok başvuruyu aynı anda kaliteye gönderme / reddetme)
-- Sorumlu atama, öncelik, dahili notlar
+- Sorumluluk **üstlenerek** alınır (elle atama yoktur), öncelik, dahili notlar
 
 ### Faz 3 — İş akışı ve kalite denetim modülü ✅
 
@@ -131,7 +179,8 @@ e-postalar, `server/src/lib/uiText.ts` sunucu mesajları); bir dil eksik kalırs
 - Denetim planlama (tarih, yöntem, denetçi ataması)
 - **Ağırlıklı kontrol listesi** (IATF 16949 esinli, 7 bölüm / 22 madde) ile puanlama;
   anlık ağırlıklı skor ve **A/B/C/D** not projeksiyonu
-- Gerekçe zorunluluğuyla not ezme (override) imkânı
+- Not **ağırlıklı puandan hesaplanır ve elle değiştirilemez** — değerlendirmenin
+  öznelliği kontrol listesi puanlamasında kalır, sonuç puanın birebir karşılığıdır
 - Denetim tamamlandığında sonuç satınalmaya görev olarak geri döner
 - Onaylananlar **onaylı tedarikçi havuzuna** aktarılır (C notu → şartlı onay)
 

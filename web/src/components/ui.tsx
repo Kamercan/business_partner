@@ -207,6 +207,7 @@ export function FileSlot({
   file,
   onSelect,
   labels,
+  error,
 }: {
   title: string;
   meta: string;
@@ -216,6 +217,8 @@ export function FileSlot({
   file: File[] | null;
   onSelect: (files: File[] | null) => void;
   labels: { required: string; optional: string; remove: string };
+  /** Zorunlu belge eksikse gösterilecek uyarı. */
+  error?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -223,7 +226,7 @@ export function FileSlot({
 
   return (
     <div
-      className={`upload-slot ${has ? 'uploaded' : ''} ${dragging ? 'dragging' : ''}`}
+      className={`upload-slot ${has ? 'uploaded' : ''} ${dragging ? 'dragging' : ''} ${error && !has ? 'invalid' : ''}`}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => {
         e.preventDefault();
@@ -258,10 +261,8 @@ export function FileSlot({
           {title}
           <span className={required ? 'req-badge' : 'opt-badge'}>{required ? labels.required : labels.optional}</span>
         </div>
-        <div className="upload-meta">
-          {has
-            ? file!.map((f) => `${f.name} · ${formatBytes(f.size)}`).join(', ')
-            : meta}
+        <div className={`upload-meta ${error && !has ? 'upload-error' : ''}`}>
+          {has ? file!.map((f) => `${f.name} · ${formatBytes(f.size)}`).join(', ') : error ?? meta}
         </div>
       </div>
       {has && (

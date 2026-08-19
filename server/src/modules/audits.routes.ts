@@ -121,7 +121,11 @@ auditRoutes.get(
   }),
 );
 
-/** Periyodik / özel denetim açma (onaylı tedarikçiler için). */
+/**
+ * Periyodik / özel denetim açma (onaylı tedarikçiler için). Denetim kalite
+ * biriminin alanıdır: satınalma başvuruyu kaliteye yönlendirir, denetimi
+ * planlayan ve yürüten kalitedir.
+ */
 const createSchema = z.object({
   supplier_id: z.number().int().positive().optional(),
   application_id: z.number().int().positive().optional(),
@@ -133,7 +137,7 @@ const createSchema = z.object({
 
 auditRoutes.post(
   '/',
-  requireRole('QUALITY', 'MODERATOR'),
+  requireRole('QUALITY'),
   ah(async (req, res) => {
     const body = parse(createSchema, req.body);
     if (!body.supplier_id && !body.application_id) {
@@ -314,14 +318,16 @@ auditRoutes.put(
 );
 
 /** Denetimi tamamla — puan ve A/B/C/D notu kesinleşir. */
+/**
+ * Denetim notu kontrol listesinin ağırlıklı puanından hesaplanır ve elle
+ * değiştirilemez. Değerlendirme öznelliği puanlamada kalır; sonuç, puanın
+ * doğrudan karşılığıdır.
+ */
 const completeSchema = z.object({
   strengths: z.string().max(4000).optional(),
   findings: z.string().max(4000).optional(),
   recommendation: z.enum(['APPROVE', 'APPROVE_WITH_CONDITIONS', 'REAUDIT', 'REJECT']),
   method: z.enum(['ONSITE', 'REMOTE', 'DESKTOP']).optional(),
-  /** Kalite uzmanı, hesaplanan notu gerekçe ile ezebilir. */
-  grade_override: z.enum(['A', 'B', 'C', 'D']).optional(),
-  override_reason: z.string().max(1000).optional(),
 });
 
 auditRoutes.post(
@@ -341,11 +347,8 @@ auditRoutes.post(
     if (computed.answered < computed.total) {
       throw badRequest(`Kontrol listesi eksik: ${computed.answered}/${computed.total} madde puanlandı.`);
     }
-    if (body.grade_override && !body.override_reason) {
-      throw badRequest('Kalite notunu değiştirmek için gerekçe girilmelidir.');
-    }
-
-    const grade = body.grade_override ?? computed.grade;
+    // Not doğrudan puandan gelir; elle değiştirme yolu yoktur.
+    const grade = computed.grade;
 
     tx(() => {
       db.prepare(
@@ -365,9 +368,7 @@ auditRoutes.post(
         action: 'COMPLETED',
         actor: actorOf(req),
         to: `${grade} (${computed.score})`,
-        detail: body.grade_override
-          ? `Hesaplanan not ${computed.grade} iken ${grade} olarak değiştirildi. Gerekçe: ${body.override_reason}`
-          : `Öneri: ${body.recommendation}`,
+        detail: `Öneri: ${body.recommendation}`,
       });
 
       closeTasksFor('AUDIT', id, req.user!.id, ['PERFORM_AUDIT']);
@@ -425,9 +426,10 @@ auditRoutes.post(
   }),
 );
 
+/** Denetim kaydına not — uygunsuzluk notlarında olduğu gibi yalnızca kalite yazar. */
 auditRoutes.post(
   '/:id/notes',
-  requireRole('QUALITY', 'MODERATOR'),
+  requireRole('QUALITY'),
   ah((req, res) => {
     const id = Number(req.params.id);
     const body = parse(z.object({ body: z.string().trim().min(1).max(4000) }), req.body);

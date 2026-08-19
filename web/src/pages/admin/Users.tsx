@@ -241,7 +241,7 @@ export default function Users() {
                   }}
                   type="button"
                 >
-                  Kaydet
+                  {t('a.save')}
                 </button>
               </div>
             </>
