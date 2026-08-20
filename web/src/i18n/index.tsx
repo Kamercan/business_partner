@@ -293,16 +293,11 @@ const publicDict = {
     ja: '10営業日以内に一次評価を行います。',
   },
   'success.step2': {
-    tr: 'Uygun bulunursa tedarikçi anket formu gönderilir.',
-    en: 'If approved, a detailed supplier questionnaire is sent.',
-    ja: '通過した場合、詳細なサプライヤー調査票をお送りします。',
-  },
-  'success.step3': {
     tr: 'Ziyaret / denetim planlaması yapılır.',
     en: 'A site visit / audit is scheduled.',
     ja: '訪問・監査の日程を調整します。',
   },
-  'success.step4': {
+  'success.step3': {
     tr: 'Potansiyel RFQ süreçlerine davet edilirsiniz.',
     en: 'You are invited to potential RFQ processes.',
     ja: '見積依頼（RFQ）にご招待します。',

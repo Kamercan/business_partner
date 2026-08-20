@@ -276,14 +276,28 @@ export function seedUsers(): { adminCreated: boolean; adminPassword: string | nu
   // Rol hesapları yalnızca demo modunda oluşturulur; gerçek kurulumda
   // kullanıcılar yönetici tarafından panelden açılır.
   if (config.demoMode) {
-    // Satınalma birimi birden fazla kişiden oluşur: gelen başvuruyu kim
-    // üstlenirse sorumlusu o olur, görev diğerlerinin kuyruğundan düşer.
-    insert.run('satinalma@yanmar.com.tr', hash('Moderator123!'), 'Kamercan Beşikci', 'MODERATOR', 'Teknik Satınalma');
-    insert.run('satinalma2@yanmar.com.tr', hash('Moderator123!'), 'Elif Demir', 'MODERATOR', 'Teknik Satınalma');
-    insert.run('satinalma3@yanmar.com.tr', hash('Moderator123!'), 'Burak Şahin', 'MODERATOR', 'Teknik Satınalma');
-    insert.run('kalite@yanmar.com.tr', hash('Kalite123!'), 'Kalite Birimi Uzmanı', 'QUALITY', 'Kalite Güvence');
-    insert.run('kalite2@yanmar.com.tr', hash('Kalite123!'), 'Merve Aksoy', 'QUALITY', 'Kalite Güvence');
-    insert.run('izleme@yanmar.com.tr', hash('Viewer123!'), 'Yönetim Raporlama', 'VIEWER', 'Yönetim');
+    /**
+     * Demo hesapları kişi değil, **koltuk** temsil eder: adları birim + sıra
+     * numarasıdır. Böylece demoyu kimin izlediğinden bağımsız kalır ve gerçek
+     * bir çalışanın adı örnek veride dolaşmaz.
+     *
+     * Her birim iki hesaplıdır; amaç üstlenme kilidinin görülebilmesidir:
+     * biri işi üstlendiğinde görev diğerinin kuyruğundan düşer.
+     */
+    const seat = db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, role, department, locale)
+       VALUES (?, ?, ?, ?, ?, 'tr')
+       ON CONFLICT(email) DO UPDATE SET full_name = excluded.full_name, is_active = 1`,
+    );
+    seat.run('satinalma@yanmar.com.tr', hash('Moderator123!'), 'Satınalma 1', 'MODERATOR', 'Teknik Satınalma');
+    seat.run('satinalma2@yanmar.com.tr', hash('Moderator123!'), 'Satınalma 2', 'MODERATOR', 'Teknik Satınalma');
+    seat.run('kalite@yanmar.com.tr', hash('Kalite123!'), 'Kalite 1', 'QUALITY', 'Kalite Güvence');
+    seat.run('kalite2@yanmar.com.tr', hash('Kalite123!'), 'Kalite 2', 'QUALITY', 'Kalite Güvence');
+    seat.run('izleme@yanmar.com.tr', hash('Viewer123!'), 'İzleyici', 'VIEWER', 'Yönetim');
+
+    // Daha önceki demo sürümünde açılmış üçüncü satınalma koltuğu artık yok.
+    // Kayıt silinmez (görev ve karar geçmişi ona bağlı olabilir), pasifleştirilir.
+    db.prepare("UPDATE users SET is_active = 0 WHERE email = 'satinalma3@yanmar.com.tr'").run();
   }
 
   return { adminCreated: !adminExists, adminPassword: config.seedAdminPassword ? null : adminPassword };

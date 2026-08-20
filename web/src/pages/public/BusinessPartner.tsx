@@ -412,12 +412,11 @@ export default function BusinessPartner() {
                   {t('gate.demo.hint')}
                   <div className="demo-list">
                     {[
-                      { role: 'MODERATOR', name: 'Kamercan Beşikci', email: 'satinalma@yanmar.com.tr', password: 'Moderator123!' },
-                      { role: 'MODERATOR', name: 'Elif Demir', email: 'satinalma2@yanmar.com.tr', password: 'Moderator123!' },
-                      { role: 'MODERATOR', name: 'Burak Şahin', email: 'satinalma3@yanmar.com.tr', password: 'Moderator123!' },
-                      { role: 'QUALITY', name: 'Kalite Birimi Uzmanı', email: 'kalite@yanmar.com.tr', password: 'Kalite123!' },
-                      { role: 'QUALITY', name: 'Merve Aksoy', email: 'kalite2@yanmar.com.tr', password: 'Kalite123!' },
-                      { role: 'VIEWER', name: 'Yönetim Raporlama', email: 'izleme@yanmar.com.tr', password: 'Viewer123!' },
+                      { role: 'MODERATOR', name: 'Satınalma 1', email: 'satinalma@yanmar.com.tr', password: 'Moderator123!' },
+                      { role: 'MODERATOR', name: 'Satınalma 2', email: 'satinalma2@yanmar.com.tr', password: 'Moderator123!' },
+                      { role: 'QUALITY', name: 'Kalite 1', email: 'kalite@yanmar.com.tr', password: 'Kalite123!' },
+                      { role: 'QUALITY', name: 'Kalite 2', email: 'kalite2@yanmar.com.tr', password: 'Kalite123!' },
+                      { role: 'VIEWER', name: 'İzleyici', email: 'izleme@yanmar.com.tr', password: 'Viewer123!' },
                     ].map((d) => (
                       <button
                         key={d.email}

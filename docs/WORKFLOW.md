@@ -88,7 +88,8 @@ Yetkisiz bir birim denediğinde sunucu `403` ve
 
 ### İş üstlenme
 
-Bir birime birden çok hesap bağlıdır. Yeni iş **birimin ortak kuyruğuna** düşer;
+Bir birime birden çok hesap bağlıdır (demoda her birimde iki koltuk). Yeni iş
+**birimin ortak kuyruğuna** düşer;
 `GET /admin/tasks?myQueue=true` hem üstlenilmemiş birim işlerini hem kişiye
 atanmış işleri, **en yeni kayıt en üstte** olacak şekilde döner.
 

@@ -254,7 +254,17 @@ export const adminDict = {
   'ad.other': { tr: 'Diğer', en: 'Other', ja: 'その他' },
   'ad.not.received': { tr: '✗ Yok', en: '✗ None', ja: '✗ なし' },
   'ad.open.audit': { tr: 'Denetimi aç', en: 'Open the audit', ja: '監査を開く' },
-  'ad.note.optional': { tr: 'Not (opsiyonel)', en: 'Note (optional)', ja: 'メモ（任意）' },
+  'ad.note.optional': { tr: 'Dahili not (opsiyonel)', en: 'Internal note (optional)', ja: '社内メモ（任意）' },
+  'ad.note.internal.hint': {
+    tr: 'Bu not yalnızca işi devralan Yanmar birimine gider; tedarikçiye gönderilmez. Tedarikçi yalnızca durum bilgilendirmesini alır.',
+    en: 'This note goes only to the Yanmar unit taking over; it is not sent to the supplier. The supplier receives only the status notification.',
+    ja: 'このメモは業務を引き継ぐヤンマー社内の部門にのみ共有され、サプライヤーには送信されません。サプライヤーにはステータス通知のみが届きます。',
+  },
+  'ad.reason.hint': {
+    tr: 'Gerekçe, bilgilendirme e-postasıyla tedarikçiye iletilir.',
+    en: 'The reason is sent to the supplier in the notification email.',
+    ja: '理由は通知メールでサプライヤーにお伝えします。',
+  },
   'ad.duplicate.list': {
     tr: 'Aynı firma/e-posta ile eşleşen başvurular:',
     en: 'Applications matching the same company or email:',

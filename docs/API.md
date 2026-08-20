@@ -53,7 +53,7 @@ Aynı firma 24 saat içinde tekrar başvurursa `409 CONFLICT`.
 | `GET` | `/export` | tümü | Excel (aynı filtreler) |
 | `GET` | `/:id` | tümü | Detay + belgeler, denetimler, notlar; `allowedTransitions` **role göre süzülür**, `stageOwner` aşamanın sorumlusunu döner |
 | `PATCH` | `/:id` | MOD/QUA | Öncelik, karar notu (**sorumlu buradan değiştirilemez** — üstlenmeyle belirlenir) |
-| `POST` | `/:id/status` | MOD/QUA | Durum geçişi (iş akışını tetikler); hedef durumun sahibi olmayan birim `403` alır (`STATUS_ROLES`) |
+| `POST` | `/:id/status` | MOD/QUA | Durum geçişi (iş akışını tetikler); hedef durumun sahibi olmayan birim `403` alır (`STATUS_ROLES`). `note` **dahilidir** — devralan birime `INTERNAL` not olarak düşer, tedarikçiye gitmez; tedarikçiye yalnızca durum bildirimi ve `rejection_reason` gider |
 | `POST` | `/bulk-status` | MOD | Toplu durum değişikliği (en fazla 200) |
 | `POST` | `/:id/request-info` | MOD/QUA | Süreli bağlantıyla bilgi/belge talebi |
 | `POST` | `/:id/notes` | MOD/QUA | Dahili not |

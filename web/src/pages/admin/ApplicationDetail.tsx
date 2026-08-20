@@ -533,6 +533,10 @@ export default function ApplicationDetail() {
             <div className="field">
               <label>{['REJECTED', 'DISQUALIFIED'].includes(statusModal) ? t('ad.reason') : t('ad.note.optional')}</label>
               <textarea rows={3} value={statusNote} onChange={(e) => setStatusNote(e.target.value)} />
+              {/* Not dahilidir: işi devralan birime gider, tedarikçiye gitmez. */}
+              <p className="small muted" style={{ marginTop: 6 }}>
+                {['REJECTED', 'DISQUALIFIED'].includes(statusModal) ? t('ad.reason.hint') : t('ad.note.internal.hint')}
+              </p>
             </div>
             <label className="row small" style={{ gap: 8 }}>
               <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />

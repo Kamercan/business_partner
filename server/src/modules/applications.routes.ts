@@ -611,6 +611,19 @@ adminApplications.post(
         detail: body.note ?? body.rejection_reason ?? null,
       });
 
+      /**
+       * Karar notu, işi devralan birimin görebilmesi için dahili not olarak da
+       * kaydedilir — satınalmanın kaliteye bıraktığı açıklama böylece başvuru
+       * ekranındaki Notlar bölümünde durur. `INTERNAL` olduğu için tedarikçinin
+       * hiçbir ekranında görünmez.
+       */
+      if (body.note) {
+        db.prepare(
+          `INSERT INTO notes (entity_type, entity_id, author_id, body, visibility)
+           VALUES ('APPLICATION', ?, ?, ?, 'INTERNAL')`,
+        ).run(id, req.user!.id, body.note);
+      }
+
       let auditId: number | null = null;
       let supplierId: number | null = null;
 
@@ -727,7 +740,13 @@ adminApplications.post(
     }
 
     if (body.notify) {
-      await notifyStatusChange(app, body.status, body.note ?? body.rejection_reason ?? null);
+      /**
+       * Karar notu **dahilidir**: kararı alan birimin, işi devraldığı birime
+       * bıraktığı açıklamadır ve tedarikçiye gitmez. Tedarikçiye yalnızca
+       * durum bilgilendirmesi ve — reddedildiyse — kendisine yazılan gerekçe
+       * gider.
+       */
+      await notifyStatusChange(app, body.status, body.rejection_reason ?? null);
       if (result.auditId) {
         const auditNo = db.prepare('SELECT audit_no FROM audits WHERE id = ?').get(result.auditId) as { audit_no: string };
         await notifyAuditAssigned({

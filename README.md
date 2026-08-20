@@ -43,17 +43,16 @@ otomatik kurulur; `npm run db:seed` yalnızca elle müdahale için gereklidir.
 Bu hesaplar yalnızca **demo modunda** (`SEED_DEMO=true`) oluşturulur ve giriş
 ekranında gösterilir. `SEED_DEMO=false` ile kurulan sistemde hiçbiri yoktur.
 
-Satınalma ve kalite birer **birimdir**, tek kişi değil: aynı role birden çok
-hesap bağlıdır, gelen iş önce birimin ortak kuyruğuna düşer ve kim üstlenirse
-işin sorumlusu o olur.
+Satınalma ve kalite birer **birimdir**, tek kişi değil: her birimde iki hesap
+vardır, gelen iş önce birimin ortak kuyruğuna düşer ve kim üstlenirse işin
+sorumlusu o olur. Hesap adları kişi değil **koltuk** belirtir.
 
 | Rol | E-posta | Şifre | Ne yapabilir |
 |---|---|---|---|
-| Satınalma / Moderatör | `satinalma@yanmar.com.tr` | `Moderator123!` | Başvuruları değerlendirir, onaylar, Excel'e aktarır, sözleşme açar |
-| Satınalma / Moderatör | `satinalma2@yanmar.com.tr` | `Moderator123!` | Aynı birim — Elif Demir |
-| Satınalma / Moderatör | `satinalma3@yanmar.com.tr` | `Moderator123!` | Aynı birim — Burak Şahin |
-| Kalite Birimi | `kalite@yanmar.com.tr` | `Kalite123!` | Denetim yapar, A/B/C/D notu verir, uygunsuzluk açar |
-| Kalite Birimi | `kalite2@yanmar.com.tr` | `Kalite123!` | Aynı birim — Merve Aksoy |
+| Satınalma 1 | `satinalma@yanmar.com.tr` | `Moderator123!` | Başvuruları değerlendirir, onaylar, Excel'e aktarır, sözleşme açar |
+| Satınalma 2 | `satinalma2@yanmar.com.tr` | `Moderator123!` | Aynı birim, aynı yetkiler |
+| Kalite 1 | `kalite@yanmar.com.tr` | `Kalite123!` | Denetim yapar, A/B/C/D notu verir, uygunsuzluk açar |
+| Kalite 2 | `kalite2@yanmar.com.tr` | `Kalite123!` | Aynı birim, aynı yetkiler |
 | İzleyici | `izleme@yanmar.com.tr` | `Viewer123!` | Salt okunur raporlama |
 | Yönetici | `admin@yanmar.com.tr` | yerelde `Admin123!` | Tümü + kullanıcı ve taksonomi yönetimi |
 
@@ -128,6 +127,11 @@ Kaynak: `server/src/lib/constants.ts` içindeki `STATUS_ROLES` matrisi ve
 `suppliers.routes.ts` içindeki `SUPPLIER_FIELD_OWNER` tablosu.
 `constants.test.ts` bu iki tablonun durum makinesiyle tutarlı kalmasını
 sınar — yeni bir durum eklenip sorumlusu yazılmazsa testler kırılır.
+
+**Karar notu dahilidir.** Durum değiştirirken yazılan not, işi devralan birime
+bırakılan açıklamadır: başvurunun Notlar bölümüne `INTERNAL` olarak düşer,
+tedarikçiye **gönderilmez**. Tedarikçi yalnızca durum bilgilendirmesini alır —
+reddedilme durumunda ayrıca kendisine yazılan gerekçeyi.
 
 **İş üstlenme.** Yeni başvuru, ilgili birimin **ortak kuyruğuna** düşer ve o
 birimdeki herkes görür. Biri *Üstlen* dediğinde:

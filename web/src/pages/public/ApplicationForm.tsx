@@ -223,7 +223,6 @@ export default function ApplicationForm({ meta, onClose }: { meta: Meta; onClose
               <li>{t('success.step1')}</li>
               <li>{t('success.step2')}</li>
               <li>{t('success.step3')}</li>
-              <li>{t('success.step4')}</li>
             </ol>
           </div>
           <p className="small muted" style={{ marginBottom: 20 }}>
