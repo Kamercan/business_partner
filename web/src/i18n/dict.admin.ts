@@ -479,6 +479,49 @@ export const adminDict = {
   'co.value': { tr: 'Tutar', en: 'Value', ja: '金額' },
   'co.currency': { tr: 'Para birimi', en: 'Currency', ja: '通貨' },
 
+  // ------------------------- Sözleşme detayı ve belgeleri --------------------
+  'co.detail': { tr: 'Sözleşme', en: 'Contract', ja: '契約' },
+  'co.back': { tr: '← Sözleşmeler', en: '← Contracts', ja: '← 契約一覧' },
+  'co.docs': { tr: 'Sözleşme belgeleri', en: 'Contract documents', ja: '契約書類' },
+  'co.docs.none': {
+    tr: 'Henüz belge yüklenmemiş. İmzalı sözleşmeyi, eklerini ve yazışmaları buraya ekleyebilirsiniz.',
+    en: 'No documents yet. You can add the signed contract, its annexes and correspondence here.',
+    ja: 'まだ書類がありません。締結済みの契約書、付属文書、関連文書をここに追加できます。',
+  },
+  'co.upload': { tr: 'Sözleşme dosyası yükle', en: 'Upload a contract file', ja: '契約書ファイルをアップロード' },
+  'co.upload.meta': {
+    tr: 'PDF, Word, Excel veya görsel · en fazla 10 dosya',
+    en: 'PDF, Word, Excel or image · up to 10 files',
+    ja: 'PDF・Word・Excel・画像 · 最大10ファイル',
+  },
+  'co.upload.hint': {
+    tr: 'Belgeler dahilidir. Tedarikçinin de görmesini istediğiniz dosyayı yükledikten sonra paylaşıma açabilirsiniz.',
+    en: 'Documents are internal. After uploading, you can share a file with the supplier if needed.',
+    ja: '書類は社内限定です。アップロード後、必要に応じてサプライヤーと共有できます。',
+  },
+  'co.uploaded': { tr: 'Belge yüklendi.', en: 'The document has been uploaded.', ja: '書類をアップロードしました。' },
+  'co.upload.now': {
+    tr: 'Sözleşme dosyası (opsiyonel)',
+    en: 'Contract file (optional)',
+    ja: '契約書ファイル（任意）',
+  },
+  'co.upload.now.meta': {
+    tr: 'Şimdi ekleyebilir veya sonra sözleşme sayfasından yükleyebilirsiniz',
+    en: 'Add it now, or upload it later from the contract page',
+    ja: '今すぐ追加するか、後で契約ページからアップロードできます',
+  },
+  'co.doc.count': { tr: 'belge', en: 'documents', ja: '件の書類' },
+  'co.share': { tr: 'Tedarikçiyle paylaş', en: 'Share with the supplier', ja: 'サプライヤーと共有' },
+  'co.unshare': { tr: 'Paylaşımı kaldır', en: 'Stop sharing', ja: '共有を解除' },
+  'co.shared': { tr: 'tedarikçiyle paylaşıldı', en: 'shared with the supplier', ja: 'サプライヤーと共有済み' },
+  'co.edit': { tr: 'Sözleşmeyi düzenle', en: 'Edit the contract', ja: '契約を編集' },
+  'co.updated': { tr: 'Sözleşme güncellendi.', en: 'The contract has been updated.', ja: '契約を更新しました。' },
+  'co.signed.at': { tr: 'İmza tarihi', en: 'Signed on', ja: '締結日' },
+  'co.auto.renew': { tr: 'Süre dolunca kendiliğinden yenilensin', en: 'Renew automatically on expiry', ja: '期限到来時に自動更新する' },
+  'co.notes': { tr: 'Sözleşme notu', en: 'Contract note', ja: '契約メモ' },
+  'co.not.found': { tr: 'Sözleşme bulunamadı.', en: 'The contract was not found.', ja: '契約が見つかりません。' },
+  'co.doc.deleted': { tr: 'Belge silindi.', en: 'The document has been deleted.', ja: '書類を削除しました。' },
+
   // ------------------------------ Uygunsuzluklar ----------------------------
   'nc.title': { tr: 'Uygunsuzluk Raporları (NCR)', en: 'Non-conformance reports (NCR)', ja: '不適合報告書（NCR）' },
   'nc.subtitle': {

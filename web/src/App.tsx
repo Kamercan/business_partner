@@ -6,6 +6,7 @@ import Applications from './pages/admin/Applications';
 import ApplicationDetail from './pages/admin/ApplicationDetail';
 import AuditDetail from './pages/admin/AuditDetail';
 import Audits from './pages/admin/Audits';
+import ContractDetail from './pages/admin/ContractDetail';
 import ContractsPage from './pages/admin/Contracts';
 import Dashboard from './pages/admin/Dashboard';
 import NcrDetail from './pages/admin/NcrDetail';
@@ -71,6 +72,7 @@ export default function App() {
         <Route path="tedarikciler" element={<Suppliers />} />
         <Route path="tedarikciler/:id" element={<SupplierDetail />} />
         <Route path="sozlesmeler" element={<ContractsPage />} />
+        <Route path="sozlesmeler/:id" element={<ContractDetail />} />
         <Route path="uygunsuzluklar" element={<Ncrs />} />
         <Route path="uygunsuzluklar/:id" element={<NcrDetail />} />
         <Route path="gorevler" element={<TasksPage />} />

@@ -192,6 +192,10 @@ en yeni kayıt en üstte olacak şekilde listelenir.
 
 - **Sözleşme yönetimi**: NDA, çerçeve, fiyat, kalite anlaşmaları; süre takibi ve
   yenileme hatırlatma görevleri
+- **Sözleşme dosyaları**: imzalı sözleşme ve ekleri kayıt açılırken eklenebilir ya da
+  sonradan sözleşme sayfasından yüklenir. Belgeler varsayılan olarak dahilidir;
+  tek düğmeyle tedarikçiye açılabilir — açılan dosya tedarikçi portalında görünür,
+  dahili kalanlar görünmez
 - **Uygunsuzluk raporları (NCR)** 8D akışıyla: açma → tedarikçi cevabı → inceleme → kapatma
   (kök neden ve düzeltici faaliyet girilmeden kapatılamaz)
 - **Karşılıklı güvenli dosya paylaşımı**: belge bazlı görünürlük (dahili / tedarikçiyle paylaşılan)

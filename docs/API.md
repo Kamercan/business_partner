@@ -110,8 +110,9 @@ ağırlıklı puandan hesaplanır; gövdede gönderilen not alanları yok sayıl
 | `GET` | `/admin/suppliers/export` | tümü | Excel |
 | `GET` | `/admin/suppliers/:id` | tümü | Detay + sözleşme, NCR, denetim, belge |
 | `PATCH` | `/admin/suppliers/:id` | MOD/QUA | Alan bazlı: ticari alanlar MOD, kalite alanları QUA (`SUPPLIER_FIELD_OWNER`) |
-| `GET` | `/admin/contracts` | tümü | Liste (`expiring=true` süresi yaklaşanlar) |
-| `POST` | `/admin/contracts` | MOD | Yeni sözleşme |
+| `GET` | `/admin/contracts` | tümü | Liste (`expiring=true` süresi yaklaşanlar); `document_count` belge sayısını döner |
+| `GET` | `/admin/contracts/:id` | tümü | Detay + belgeler + işlem geçmişi |
+| `POST` | `/admin/contracts` | MOD | Yeni sözleşme (yanıttaki `id` ile belge yüklenir) |
 | `PATCH` | `/admin/contracts/:id` | MOD | Güncelleme |
 | `POST` | `/admin/contracts/scan-expiring` | MOD | Süre taraması + yenileme görevleri |
 | `GET` | `/admin/ncrs` | tümü | Liste (`status`, `severity`, `overdue`) |

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError, api, qs } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, EmptyState, Loading, Modal, Pagination, useToast } from '../../components/ui';
+import { Badge, EmptyState, FileSlot, Loading, Modal, Pagination, useToast } from '../../components/ui';
 import { CONTRACT_STATUS, CONTRACT_TYPE, formatDate, formatMoney, label, tone } from '../../lib/labels';
 import { useI18n } from '../../i18n';
 import { TopBar } from './AdminLayout';
@@ -21,6 +21,7 @@ type Row = {
   currency: string;
   value: number | null;
   owner_name: string | null;
+  document_count: number;
   expiry_flag: number;
   days_remaining: number | null;
 };
@@ -41,6 +42,7 @@ const EMPTY_FORM = {
 export default function ContractsPage() {
   const { t, lang } = useI18n();
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const toast = useToast();
   const { can, readOnly } = useAuth();
 
@@ -49,6 +51,8 @@ export default function ContractsPage() {
   const [suppliers, setSuppliers] = useState<Array<{ id: number; company_name: string; supplier_code: string }>>([]);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  /** Sözleşme dosyası oluşturma anında eklenebilir. */
+  const [files, setFiles] = useState<File[] | null>(null);
   const [busy, setBusy] = useState(false);
 
   const query = useMemo(() => Object.fromEntries(params.entries()), [params]);
@@ -81,7 +85,7 @@ export default function ContractsPage() {
   async function create() {
     setBusy(true);
     try {
-      await api.post('/admin/contracts', {
+      const created = await api.post<{ id: number }>('/admin/contracts', {
         supplier_id: Number(form.supplier_id),
         title: form.title,
         type: form.type,
@@ -93,10 +97,33 @@ export default function ContractsPage() {
         renewal_notice_days: Number(form.renewal_notice_days),
         notes: form.notes || undefined,
       });
+
+      /**
+       * Sözleşme dosyası formda seçildiyse kayıt açılır açılmaz yüklenir.
+       * Belge yükleme sözleşmenin id'sini gerektirdiği için iki adımdır;
+       * kullanıcı açısından tek işlemdir. Yükleme başarısız olursa sözleşme
+       * yine de oluşmuştur — dosya detay sayfasından eklenebilir.
+       */
+      if (files?.length) {
+        const fd = new FormData();
+        files.forEach((f) => fd.append('files', f));
+        fd.append('owner_type', 'CONTRACT');
+        fd.append('owner_id', String(created.id));
+        fd.append('kind', 'CONTRACT_FILE');
+        fd.append('visibility', 'INTERNAL');
+        try {
+          await api.upload('/admin/documents', fd);
+        } catch (err) {
+          toast.push(err instanceof ApiError ? err.message : t('a.load.failed'), 'error');
+        }
+      }
+
       toast.push(t('co.created'), 'ok');
       setModal(false);
       setForm(EMPTY_FORM);
-      load();
+      setFiles(null);
+      // Yeni sözleşmenin sayfasına geç: belge ekleme ve düzenleme oradadır.
+      navigate(`/yonetim/sozlesmeler/${created.id}`);
     } catch (err) {
       toast.push(err instanceof ApiError ? err.message : t('a.create.failed'), 'error');
     } finally {
@@ -207,8 +234,13 @@ export default function ContractsPage() {
                     {data?.rows.map((row) => (
                       <tr key={row.id}>
                         <td>
-                          <span className="company">{row.title}</span>
-                          <div className="ref">{row.contract_no}</div>
+                          <Link className="company" to={`/yonetim/sozlesmeler/${row.id}`}>
+                            {row.title}
+                          </Link>
+                          <div className="ref">
+                            {row.contract_no}
+                            {row.document_count > 0 && ` · ${row.document_count} ${t('co.doc.count')}`}
+                          </div>
                         </td>
                         <td>
                           <Link to={`/yonetim/tedarikciler/${row.supplier_id}`}>{row.company_name}</Link>
@@ -337,6 +369,20 @@ export default function ContractsPage() {
               />
               <span className="hint">{t('co.reminder.hint')}</span>
             </div>
+            <div className="field">
+              <label>{t('co.notes')}</label>
+              <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </div>
+            {/* İmzalı sözleşme ve ekleri kayıt açılırken eklenebilir. */}
+            <FileSlot
+              title={t('co.upload.now')}
+              meta={t('co.upload.now.meta')}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip"
+              multiple
+              file={files}
+              onSelect={setFiles}
+              labels={{ required: t('up.required'), optional: t('up.optional'), remove: t('up.remove') }}
+            />
           </div>
         </Modal>
       )}
