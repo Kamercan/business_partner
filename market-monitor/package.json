@@ -1,0 +1,48 @@
+{
+  "name": "market-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Piyasa & Maliyet Göstergeleri Panosu — asgari ücret, sac, hurda, akaryakıt, navlun, enerji, enflasyon",
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "dev": "concurrently -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "tsx watch src/server/index.ts",
+    "dev:web": "vite",
+    "build": "npm run build:api && npm run build:web",
+    "build:api": "tsc -p tsconfig.server.json && node scripts/copy-assets.mjs",
+    "build:web": "vite build",
+    "start": "node dist/server/index.js",
+    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "db:reset": "tsx src/server/cli/reset.ts",
+    "ingest": "tsx src/server/cli/ingest.ts",
+    "sources:check": "tsx src/server/cli/check.ts",
+    "evds:find": "tsx src/server/cli/evds-find.ts",
+    "test": "tsx --test src/server/**/*.test.ts src/shared/**/*.test.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "chart.js": "^4.4.7",
+    "compression": "^1.7.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/compression": "^1.7.5",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.7",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11"
+  }
+}

@@ -295,3 +295,13 @@ Ayrıntılar için [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
 6. SMTP bilgilerini girin; aksi hâlde bildirimler yalnızca e-posta kutusuna kaydedilir.
 7. Eş zamanlı kullanıcı sayısı arttığında SQLite yerine PostgreSQL'e geçiş için
    [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) içindeki nota bakın.
+
+---
+
+## Piyasa & Maliyet Göstergeleri Panosu
+
+Bu depo, portalden bağımsız çalışan ikinci bir uygulama daha barındırır:
+asgari ücret, sac metal, hurda, akaryakıt, navlun, enerji ve enflasyon
+göstergelerini resmî kaynaklarından geçmişiyle izleyen bir pano.
+
+Kurulum ve kaynak listesi: [`market-monitor/README.md`](market-monitor/README.md)
